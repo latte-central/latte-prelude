@@ -1,10 +1,10 @@
-(defproject latte-prelude "0.1.0-SNAPSHOT"
+(defproject latte-prelude "0.2.0-SNAPSHOT"
   :description "The core library for the LaTTe proof assistant."
   :url "https://github.com/fredokun/latte-prelude.git"
   :license {:name "MIT Licence"
             :url "http://opensource.org/licenses/MIT"}
   :dependencies [[org.clojure/clojure "1.9.0"]
-                 [latte "0.102.0-SNAPSHOT"]]
+                 [latte "0.103.0-SNAPSHOT"]]
   :main latte-prelude.main
   :aliases {"certify" ["run" ":certify"]
             "clear-cert" ["run" ":clear-cert"]}
