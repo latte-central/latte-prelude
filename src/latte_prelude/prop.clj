@@ -10,8 +10,8 @@
             [latte.utils :refer [set-opacity! decomposer]]
             [latte.core
              :as latte
-             :refer [defthm defimplicit definition example
-                     proof assume have qed]
+             :refer [defthm defimplicit definition example try-example defnotation
+                     lambda forall proof assume have qed]
              ]))
 
 (defthm impl-refl
@@ -275,6 +275,132 @@ This is an implicit version of [[and-elim-right-thm]]."
   [def-env ctx [and-term ty]]
   (let [[A B] (decompose-and-type def-env ctx ty)]
     [(list #'and-sym-thm A B) and-term]))
+
+(defn mk-nary-op
+  "A simple utility for creating \"right-leaning\" n-ary operator calls."
+  [op args]
+  (if (seq args)
+    (if (seq (rest args))
+      (cons op (list (first args) (mk-nary-op op (rest args))))
+      (first args))
+    ()))
+
+;; (mk-nary-op 'and '[p1])
+;; => p1
+
+;; (mk-nary-op 'and '[p1 p2])
+;; => (and p1 p2)
+
+;; (mk-nary-op 'and '[p1 p2 p3])
+;; => (and p1 (and p2 p3))
+
+;; (mk-nary-op 'and '[p1 p2 p3 p4])
+;; => (and p1 (and p2 (and p3 p4)))
+
+(defnotation and*
+  "A notation defining an n-ary variant of conjunction, which exploits the fact that
+conjunction is associative. By convention we have:
+```
+(and* p1 p2 ... pN-1 pN) ≡ (and p1 (and p2 (and ... (and pN-1 pN))))
+```"
+  [& ps]
+  (if (seq ps)
+    [:ok (mk-nary-op #'and ps)]
+    [:ko {:msg "and* nary operator needs at least 1 argument"
+          :args ps}]))
+
+(example [[A :type] [B :type] [C :type]]
+    (==> (and* A B C)
+         A)
+  (qed (lambda [H (and* A B C)]
+         (and-elim-left H))))
+
+(example [[A :type] [B :type] [C :type]]
+    (==> (and* A B C)
+         B)
+    (qed (lambda [H (and* A B C)]
+         (and-elim-left (and-elim-right H)))))
+
+(example [[A :type] [B :type] [C :type]]
+    (==> (and* A B C)
+         C)
+  (qed (lambda [H (and* A B C)]
+         (and-elim-right (and-elim-right H)))))
+
+(defn build-and-elim [def-env ctx n and-term and-type]
+  (loop [k n, and-term and-term, and-type and-type]
+    ;; (println "and-term=" and-term)
+    (let [[L R] (try (decompose-and-type def-env ctx and-type)
+                     (catch Exception e
+                       (if (zero? k)
+                         [nil nil]
+                         (throw (ex-info "Wrong n-ary conjunction elimination: not a conjunction"
+                                         {:and-term and-term
+                                          :index (- n k)
+                                          :arg-type and-type
+                                          :cause e})))))]
+      (cond
+        (nil? L) and-term
+        (zero? k) [(list #'and-elim-left-thm L R) and-term]
+        :else (recur (dec k) [(list #'and-elim-right-thm L R) and-term] R)))))
+
+(defimplicit and-elim*
+  "This is a generic elimination rule for (right-leaning) n-ary
+ conjunction (e.g. as introduced by the [[and*]] notation).
+In `(and-elim* n and-term)`  the index `n` corresponds to
+the (0-based) `n`-th operand of the term.
+
+For example (informally ):
+
+ - `(and-elim* 0 (and* a b c)≡(and a (and b c))) ==> a` 
+ - `(and-elim* 1 (and* a b c)) ==> b`
+ - `(and-elim* 2 (and* a b c)) ==> c`
+
+Internally, the correct nesting of [[and-elim-left]] and
+[[and-elim-right]] is constructed. Errors are raised
+if the index is incorrect or if the specificied term
+is not a conjunction."
+  [def-env ctx n [and-term and-type]]
+  (if (clojure.core/not (clojure.core/and (integer? n)
+                                          (>= n 0)))
+    (throw (ex-info "Wrong elimination index `n`, must be a positive integer." {:n n}))
+    (let [elim-term (build-and-elim def-env ctx n and-term and-type)]
+      ;; (println "elim-term =" elim-term)
+      elim-term)))
+
+
+(example [[A :type] [B :type] [C :type]]
+    (==> (and* A B C)
+         A)
+  (qed (lambda [H (and* A B C)]
+         (and-elim* 0 H))))
+
+(example [[A :type] [B :type] [C :type]]
+    (==> (and* A B C)
+         B)
+  (qed (lambda [H (and* A B C)]
+         (and-elim* 1 H))))
+
+(example [[A :type] [B :type] [C :type]]
+    (==> (and* A B C)
+         C)
+  (qed (lambda [H (and* A B C)]
+         (and-elim* 2 H))))
+
+;; (try-example [[A :type] [B :type] [C :type]]
+;;      (==> (and* A B C)
+;;           C)
+;;    (qed (lambda [H (and* A B C)]
+;;           (and-elim* 3 H))))
+;; => [:failed "Proof failed: Qed step failed: cannot infer term type." {:cause {:msg "Cannot calculate codomain type of abstraction.", :term (λ [H (#'latte-prelude.prop/and A (#'latte-prelude.prop/and B C))] (#'latte-prelude.prop/and-elim* 3 H)), :from {:implicit and-elim*, :msg "Wrong n-ary conjunction elimination: not a conjunction", :and-term [(#'latte-prelude.prop/and-elim-right-thm B C) [(#'latte-prelude.prop/and-elim-right-thm A (#'latte-prelude.prop/and B C)) H]], :index 2, :arg-type C, :cause #error {
+;;  :cause "Not a conjunction type"
+;;  :data {:type C}
+;;  :via
+;;  [{:type clojure.lang.ExceptionInfo
+;;    :message "Not a conjunction type"
+;;    :data {:type C}
+;;    :at ...}]}]
+
 
 (definition or
   "logical disjunction."
