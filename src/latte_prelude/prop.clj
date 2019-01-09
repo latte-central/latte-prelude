@@ -455,14 +455,116 @@ Remark: the default \"left-leaning\" varient is [[and-intro*]]."
     (have <a> _ :by (r-and-intro* a b c)))
   (qed <a>))
 
+
+(defn and*-arity [def-env ctx and-type]
+  (let [res (try (decompose-and-type def-env ctx and-type)
+                 (catch Exception e nil))]
+    (if (nil? res)
+      1
+      (let [[L _] res]
+        (inc (and*-arity def-env ctx L))))))
+
+(defn elim-path [l r n arity]
+  (let [nb-left (- arity n)
+        lefts (repeat nb-left l)]
+    (if (> n 1)
+      (conj lefts r)
+      lefts)))
+
+;; (elim-path :left :right 1 2)
+;; => (:left)
+;; (elim-path :left :right 2 2)
+;; => (:right)
+
+;; (elim-path :left :right 1 3)
+;; => (:left :left)
+;; (elim-path :left :right 2 3)
+;; => (:right :left)
+;; (elim-path :left :right 3 3)
+;; => (:right)
+
+;; (elim-path :left :right 1 4)
+;; => (:left :left :left)
+;; (elim-path :left :right 2 4)
+;; => (:right :left :left)
+;; (elim-path :left :right 3 4)
+;; => (:right :left)
+;; (elim-path :left :right 4 4)
+;; => (:right)
+
 (defn build-and-elim [def-env ctx n and-term and-type]
+  (let [arity (and*-arity def-env ctx and-type)]
+    (when-not (<= 1 n arity)
+      (throw (ex-info "Wrong n-ary conjunction elimination index: must be between 1 and and-type-arity)"
+                      {:and-term and-term
+                       :index n
+                       :and-type and-type
+                       :and-type-arity arity})))
+    (let [path (elim-path #'and-elim-left #'and-elim-right n arity)]
+      (loop [path (reverse path), term and-term]
+        (if (seq path)
+          (recur (rest path) (list (first path) term))
+          term)))))
+
+(defimplicit and-elim*
+  "This is a generic elimination rule for n-ary
+ conjunction (e.g. as introduced by the [[and*]] notation).
+In `(and-elim* n and-term)`  the index `n` corresponds to
+the `n`-th operand of the term.
+
+For example (informally ):
+
+ - `(and-elim* 1 (and* a b c)≡(and (and a b) c)) ==> a` 
+ - `(and-elim* 2 (and* a b c)) ==> b`
+ - `(and-elim* 3 (and* a b c)) ==> c`
+
+Internally, the correct nesting of [[and-elim-left]] and
+[[and-elim-right]] is constructed. Errors are raised
+if the index is incorrect or if the specificied term
+is not a conjunction."
+  [def-env ctx n [and-term and-type]]
+  (let [elim-term (build-and-elim def-env ctx n and-term and-type)]
+    ;; (println "elim-term =" elim-term)
+    elim-term))
+
+
+(example [[A :type] [B :type] [C :type]]
+    (==> (and* A B C)
+         A)
+  (qed (lambda [H (and* A B C)]
+         (and-elim* 1 H))))
+
+(example [[A :type] [B :type] [C :type]]
+    (==> (and* A B C)
+         B)
+  (qed (lambda [H (and* A B C)]
+         (and-elim* 2 H))))
+
+(example [[A :type] [B :type] [C :type]]
+    (==> (and* A B C)
+         C)
+  (qed (lambda [H (and* A B C)]
+         (and-elim* 3 H))))
+
+(try-example [[A :type] [B :type] [C :type]]
+     (==> (and* A B C)
+          C)
+   (qed (lambda [H (and* A B C)]
+          (and-elim* 4 H))))
+;; => [:failed "Proof failed: Qed step failed: cannot infer term type."
+;;             {:cause {:msg "Cannot calculate codomain type of abstraction.",
+;;              :term (λ [H (#'latte-prelude.prop/and (#'latte-prelude.prop/and A B) C)] (#'latte-prelude.prop/and-elim* 4 H)),
+;;              :from {:implicit and-elim*, :msg "Wrong n-ary conjunction elimination index: must be between 1 and and-type-arity)",
+;;                     :and-term H, :index 4, :and-type (#'latte-prelude.prop/and (#'latte-prelude.prop/and A B) C), :and-type-arity 3}},
+;;              :meta {:line 552, :column 4}}]
+
+(defn build-r-and-elim [def-env ctx n and-term and-type]
   (loop [k n, and-term and-term, and-type and-type]
-    ;; (println "and-term=" and-term)
     (let [[L R] (try (decompose-and-type def-env ctx and-type)
                      (catch Exception e
                        (if (zero? k)
                          [nil nil]
-                         (throw (ex-info "Wrong n-ary conjunction elimination: not a conjunction"
+                         (throw (ex-info "Wrong n-ary conjunction elimination (right-leaning): not a conjunction"
                                          {:and-term and-term
                                           :index (- n k)
                                           :arg-type and-type
@@ -472,54 +574,45 @@ Remark: the default \"left-leaning\" varient is [[and-intro*]]."
         (zero? k) [(list #'and-elim-left-thm L R) and-term]
         :else (recur (dec k) [(list #'and-elim-right-thm L R) and-term] R)))))
 
-(defimplicit and-elim*
+(defimplicit r-and-elim*
   "This is a generic elimination rule for (right-leaning) n-ary
- conjunction (e.g. as introduced by the [[and*]] notation).
-In `(and-elim* n and-term)`  the index `n` corresponds to
-the (0-based) `n`-th operand of the term.
+ conjunction (e.g. as introduced by the [[r-and*]] notation).
+In `(r-and-elim* n r-and-term)`  the index `n` corresponds to
+the `n`-th operand of the term.
 
-For example (informally ):
-
- - `(and-elim* 0 (and* a b c)≡(and a (and b c))) ==> a` 
- - `(and-elim* 1 (and* a b c)) ==> b`
- - `(and-elim* 2 (and* a b c)) ==> c`
-
-Internally, the correct nesting of [[and-elim-left]] and
-[[and-elim-right]] is constructed. Errors are raised
-if the index is incorrect or if the specificied term
-is not a conjunction."
+This is the right-leaning version of the default [[and-elim*]]."
   [def-env ctx n [and-term and-type]]
   (if (clojure.core/not (clojure.core/and (integer? n)
-                                          (>= n 0)))
-    (throw (ex-info "Wrong elimination index `n`, must be a positive integer." {:n n}))
-    (let [elim-term (build-and-elim def-env ctx n and-term and-type)]
+                                          (>= n 1)))
+    (throw (ex-info "Wrong (righ-leaning) elimination index `n`, must be a strictly positive integer." {:index n}))
+    (let [elim-term (build-r-and-elim def-env ctx (dec n) and-term and-type)]
       ;; (println "elim-term =" elim-term)
       elim-term)))
 
 
 (example [[A :type] [B :type] [C :type]]
-    (==> (and* A B C)
+    (==> (r-and* A B C)
          A)
-  (qed (lambda [H (and* A B C)]
-         (and-elim* 0 H))))
+  (qed (lambda [H (r-and* A B C)]
+         (r-and-elim* 1 H))))
 
 (example [[A :type] [B :type] [C :type]]
-    (==> (and* A B C)
+    (==> (r-and* A B C)
          B)
-  (qed (lambda [H (and* A B C)]
-         (and-elim* 1 H))))
+  (qed (lambda [H (r-and* A B C)]
+         (r-and-elim* 2 H))))
 
 (example [[A :type] [B :type] [C :type]]
-    (==> (and* A B C)
+    (==> (r-and* A B C)
          C)
-  (qed (lambda [H (and* A B C)]
-         (and-elim* 2 H))))
+  (qed (lambda [H (r-and* A B C)]
+         (r-and-elim* 3 H))))
 
 ;; (try-example [[A :type] [B :type] [C :type]]
 ;;      (==> (and* A B C)
 ;;           C)
 ;;    (qed (lambda [H (and* A B C)]
-;;           (and-elim* 3 H))))
+;;           (and-elim* 4 H))))
 ;; => [:failed "Proof failed: Qed step failed: cannot infer term type." {:cause {:msg "Cannot calculate codomain type of abstraction.", :term (λ [H (#'latte-prelude.prop/and A (#'latte-prelude.prop/and B C))] (#'latte-prelude.prop/and-elim* 3 H)), :from {:implicit and-elim*, :msg "Wrong n-ary conjunction elimination: not a conjunction", :and-term [(#'latte-prelude.prop/and-elim-right-thm B C) [(#'latte-prelude.prop/and-elim-right-thm A (#'latte-prelude.prop/and B C)) H]], :index 2, :arg-type C, :cause #error {
 ;;  :cause "Not a conjunction type"
 ;;  :data {:type C}
@@ -528,7 +621,6 @@ is not a conjunction."
 ;;    :message "Not a conjunction type"
 ;;    :data {:type C}
 ;;    :at ...}]}]
-
 
 (definition or
   "logical disjunction."
@@ -665,7 +757,7 @@ disjunction is associative. By convention we have:
 ```"
   [& ps]
   (if (seq ps)
-    [:ok (mk-nary-op #'or ps)]
+    [:ok (mk-nary-op-right-leaning #'or ps)]
     [:ko {:msg "and* nary operator needs at least 1 argument"
           :args ps}]))
 
@@ -695,7 +787,7 @@ Then `(or-intro* A1 ... p ... An)` is a proof of `(or* A1 ... Ai ... An)`."
     (let [[arg targ] (first args)]
       (if (stx/sort? targ)
         (list #'or-intro-right arg (build-or-intro (rest args)))
-        (list #'or-intro-left arg (mk-nary-op #'or (map first (rest args))))))
+        (list #'or-intro-left arg (mk-nary-op-right-leaning #'or (map first (rest args))))))
     ;; only one argument
     (ffirst args)))
 
