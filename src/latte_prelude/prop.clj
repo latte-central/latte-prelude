@@ -5,6 +5,7 @@
   (:refer-clojure :exclude [and or not])
 
   (:require [clojure.core.match :refer [match]]
+            [latte-kernel.syntax :as stx]
             [latte-kernel.norm :as norm]
             [latte-kernel.unparser :as unparser]
             [latte.utils :refer [set-opacity! decomposer]]
@@ -299,7 +300,7 @@ This is an implicit version of [[and-elim-right-thm]]."
 ;; => (and p1 (and p2 (and p3 p4)))
 
 (defnotation and*
-  "A notation defining an n-ary variant of conjunction, which exploits the fact that
+  "A notation defining an n-ary variant of [[and]], which exploits the fact that
 conjunction is associative. By convention we have:
 ```
 (and* p1 p2 ... pN-1 pN) ≡ (and p1 (and p2 (and ... (and pN-1 pN))))
@@ -497,13 +498,11 @@ This is the introduction by the right operand."
 
 (defthm or-elim-thm
   "Elimination rule for logical disjunction.
-
-Remark: this rule,
-reflecting the definition of [[or]], provides a
- constructive way to eliminate disjunctions. 
-A simpler elimination process is offered if one
- of the two disjuncts does not hold: 
-cf. [[or-not-elim-left]] and [[or-not-elim-right]]."
+This corresponds to a important scheme of reasoning by cases. 
+To prove a proposition `C` under the assumption  `(or A B)`:
+ - first case: assume `A` and prove `C` 
+ - second case: assume `B` and prove `C`
+"
   [[A :type] [B :type]]
   (==> (or A B)
        (forall [C :type]
@@ -561,6 +560,85 @@ This is (for now) the easiest rule to use for proof-by-cases."
   [def-env ctx [or-term or-type] [prop prop-type] [left-proof left-type] [right-proof right-type]]
   (let [[A B] (decompose-or-type def-env ctx or-type)]
     [[[[(list #'or-elim-thm A B) or-term] prop] left-proof] right-proof]))
+
+(defnotation or*
+  "A notation defining an n-ary variant of [[or]], which exploits the fact that
+disjunction is associative. By convention we have:
+```
+(or* p1 p2 ... pN-1 pN) ≡ (or p1 (or p2 (or ... (or pN-1 pN))))
+```"
+  [& ps]
+  (if (seq ps)
+    [:ok (mk-nary-op #'or ps)]
+    [:ko {:msg "and* nary operator needs at least 1 argument"
+          :args ps}]))
+
+(declare build-or-intro)
+
+(defimplicit* or-intro*
+  "A generic introduction rule for [[or*]].
+Suppose we have a proof `p` of a proposition `Ai`, and suppose
+also the sequence of types `A1`,...,`Ai`,...,`An`.
+
+Then `(or-intro* A1 ... p ... An)` is a proof of `(or* A1 ... Ai ... An)`."
+  [def-env ctx & args]
+  (if (seq args)
+    (build-or-intro args)
+    (throw (ex-info "or-intro* nary rule needs at least 1 argument"
+                    {:args args}))))
+
+;; (or-intro* <x>) ≡ <x>
+;; (or-intro* <x> A) ≡ (or-intro-left <x> A)
+;; (or-intro* A <x>) ≡ (or-intro-right A <x>)
+;; (or-intro* <x> A B) ≡ (or-intro-left <x> (or A B))
+;; (or-intro* A <x> B) ≡ (or-intro-right A (or-intro-left <x> B))
+;; (or-intro* A B <x>) ≡ (or-intro-right A (or-intro-right B <x>))
+
+(defn build-or-intro [args]
+  (if (seq (rest args))
+    (let [[arg targ] (first args)]
+      (if (stx/sort? targ)
+        (list #'or-intro-right arg (build-or-intro (rest args)))
+        (list #'or-intro-left arg (mk-nary-op #'or (map first (rest args))))))
+    ;; only one argument
+    (ffirst args)))
+
+(build-or-intro '[[a A]])
+;; => a
+
+(build-or-intro '[[a A] [B ✳]])
+;; => (#'latte-prelude.prop/or-intro-left a B)
+
+(build-or-intro '[[A ✳] [b B]])
+;; => (#'latte-prelude.prop/or-intro-right A b)
+
+;; (build-or-intro '[[a A] [B ✳] [C ✳]])
+;; => (#'latte-prelude.prop/or-intro-left a (#'latte-prelude.prop/or* B C))
+
+;; (build-or-intro '[[A ✳] [b B] [C ✳]])
+;; => (#'latte-prelude.prop/or-intro-right A (#'latte-prelude.prop/or-intro-left b (#'latte-prelude.prop/or* C)))
+
+;; (build-or-intro '[[A ✳] [B ✳] [c C]])
+;; => (#'latte-prelude.prop/or-intro-right A (#'latte-prelude.prop/or-intro-right B c))
+
+(example [[A :type] [B :type] [C :type]]
+    (==> A (or* A B C))
+  (assume [a A]
+    (have <a> _ :by (or-intro* a B C)))
+  (qed <a>))
+
+(example [[A :type] [B :type] [C :type]]
+    (==> B (or* A B C))
+  (assume [b B]
+    (have <a> _ :by (or-intro* A b C)))
+  (qed <a>))
+
+(example [[A :type] [B :type] [C :type]]
+    (==> C (or* A B C))
+  (assume [c C]
+    (have <a> _ :by (or-intro* A B c)))
+  (qed <a>))
+
 
 (defthm or-not-elim-left
   "An elimination rule for disjunction, simpler than [[or-elim]].
