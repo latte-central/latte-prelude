@@ -10,7 +10,8 @@
             [latte.utils :refer [set-opacity! decomposer]]
             [latte.core
              :as latte
-             :refer [defthm defimplicit definition example try-example defnotation
+             :refer [defthm defimplicit defimplicit*
+                     definition example try-example defnotation
                      lambda forall proof assume have qed]
              ]))
 
@@ -326,6 +327,36 @@ conjunction is associative. By convention we have:
          C)
   (qed (lambda [H (and* A B C)]
          (and-elim-right (and-elim-right H)))))
+
+
+(defn build-and-intros [args]
+  (if (seq args)
+    (if (seq (rest args))
+      (list #'and-intro (ffirst args) (build-and-intros (rest args)))
+      (ffirst args))
+    (throw (ex-info "Empty and* intro list (please report)" {:args args}))))
+
+;; (build-and-intros '[[a1 A1]])
+;; => a1
+
+;; (build-and-intros '[[a1 A1] [a2 A2]])
+;; => (#'latte-prelude.prop/and-intro a1 a2)
+
+;; (build-and-intros '[[a1 A1] [a2 A2] [a3 A3]])
+;; => (#'latte-prelude.prop/and-intro a1 (#'latte-prelude.prop/and-intro a2 a3))
+
+(defimplicit* and-intro*
+  "A nary variant of [[and-intro]], the introduction rule for conjunction.
+It builds a proof of `(and* A1 A2 ... AN)` from proofs of the `Ai`'s"
+  [def-env ctx & args]
+  (build-and-intros args))
+
+(example [[A :type] [B :type] [C :type]]
+    (==> A B C
+         (and* A B C))
+  (assume [a _ b _ c _]
+    (have <a> _ :by (and-intro* a b c)))
+  (qed <a>))
 
 (defn build-and-elim [def-env ctx n and-term and-type]
   (loop [k n, and-term and-term, and-type and-type]
