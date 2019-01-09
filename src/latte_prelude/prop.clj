@@ -278,36 +278,68 @@ This is an implicit version of [[and-elim-right-thm]]."
   (let [[A B] (decompose-and-type def-env ctx ty)]
     [(list #'and-sym-thm A B) and-term]))
 
-(defn mk-nary-op
+(defn mk-nary-op-right-leaning
   "A simple utility for creating \"right-leaning\" n-ary operator calls."
   [op args]
   (if (seq args)
     (if (seq (rest args))
-      (cons op (list (first args) (mk-nary-op op (rest args))))
+      (cons op (list (first args) (mk-nary-op-right-leaning op (rest args))))
       (first args))
     ()))
 
-;; (mk-nary-op 'and '[p1])
+;; (mk-nary-op-right-leaning 'and '[p1])
 ;; => p1
 
-;; (mk-nary-op 'and '[p1 p2])
+;; (mk-nary-op-right-leaning 'and '[p1 p2])
 ;; => (and p1 p2)
 
-;; (mk-nary-op 'and '[p1 p2 p3])
+;; (mk-nary-op-right-leaning 'and '[p1 p2 p3])
 ;; => (and p1 (and p2 p3))
 
-;; (mk-nary-op 'and '[p1 p2 p3 p4])
+;; (mk-nary-op-right-leaning 'and '[p1 p2 p3 p4])
 ;; => (and p1 (and p2 (and p3 p4)))
+
+
+(defn mk-nary-op-left-leaning
+  "A simple utility for creating \"left-leaning\" n-ary operator calls.
+  Remark: the `args` are reverted in input."
+  [op args]
+  (if (seq args)
+    (if (seq (rest args))
+      (list op (mk-nary-op-left-leaning op (rest args)) (first args))
+      (first args))
+    '()))
+
+;; (mk-nary-op-left-leaning 'and '[p1])
+;; => p1
+
+;; (mk-nary-op-left-leaning 'and '[p2 p1])
+;; => (and p1 p2)
+
+;; (mk-nary-op-left-leaning 'and '[p3 p2 p1])
+;; => (and (and p1 p2) p3)
+
+;; (mk-nary-op-left-leaning 'and '[p4 p3 p2 p1])
+;; => (and (and (and p1 p2) p3) p4)
 
 (defnotation and*
   "A notation defining an n-ary variant of [[and]], which exploits the fact that
-conjunction is associative. By convention we have:
+conjunction is associative. By default we use the leaf-leaning expansion:
 ```
-(and* p1 p2 ... pN-1 pN) ≡ (and p1 (and p2 (and ... (and pN-1 pN))))
-```"
+(and* p1 p2 ... pN-1 pN) ≡ (and (and ... (and p1 p2) pN-1) pN)))
+```
+We favor this variant because it is often the case that we use conjunction for
+a form of \"subclassing\". Consider some mathematical `<object>` defined as having some properties
+`(and p1 p2)` (e.g. a preorder with reflexivity and transitivity). Then we might \"subclass\" 
+such an object by considering a supplementary property, i.e. we want `(and <object> p3)` 
+(e.g. a preorder with antisymetry hence a partial order). This is exactly `(and (and p1 p2) p3)`,
+ and if it is of course isomorphic to the right-leaning version
+`(and p1 (and p2 p3))`, only the left variant reflects the \"subclassing\" aspect.  
+A right-leaning nary conjunction is provided by [[r-and*]]. 
+"
   [& ps]
   (if (seq ps)
-    [:ok (mk-nary-op #'and ps)]
+    [:ok (mk-nary-op-left-leaning #'and (reverse ps))]
     [:ko {:msg "and* nary operator needs at least 1 argument"
           :args ps}]))
 
@@ -315,48 +347,112 @@ conjunction is associative. By convention we have:
     (==> (and* A B C)
          A)
   (qed (lambda [H (and* A B C)]
-         (and-elim-left H))))
+         (and-elim-left (and-elim-left H)))))
 
 (example [[A :type] [B :type] [C :type]]
     (==> (and* A B C)
          B)
     (qed (lambda [H (and* A B C)]
-         (and-elim-left (and-elim-right H)))))
+         (and-elim-right (and-elim-left H)))))
 
 (example [[A :type] [B :type] [C :type]]
     (==> (and* A B C)
          C)
   (qed (lambda [H (and* A B C)]
+         (and-elim-right H))))
+
+(defnotation r-and*
+  "A notation defining an n-ary variant of [[and]], which exploits the fact that
+conjunction is associative. This version is the right-leaning variant of [[and*]],
+which means the following:
+```
+(and* p1 p2 ... pN-1 pN) ≡ (and p1 (and p2 (and ... (and pN-1 pN))))
+```"
+  [& ps]
+  (if (seq ps)
+    [:ok (mk-nary-op-right-leaning #'and ps)]
+    [:ko {:msg "r-and* nary operator needs at least 1 argument"
+          :args ps}]))
+
+(example [[A :type] [B :type] [C :type]]
+    (==> (r-and* A B C)
+         A)
+  (qed (lambda [H (r-and* A B C)]
+         (and-elim-left H))))
+
+(example [[A :type] [B :type] [C :type]]
+    (==> (r-and* A B C)
+         B)
+    (qed (lambda [H (r-and* A B C)]
+         (and-elim-left (and-elim-right H)))))
+
+(example [[A :type] [B :type] [C :type]]
+    (==> (r-and* A B C)
+         C)
+  (qed (lambda [H (r-and* A B C)]
          (and-elim-right (and-elim-right H)))))
 
-
-(defn build-and-intros [args]
+(defn build-and-intros-left-leaning [args]
   (if (seq args)
     (if (seq (rest args))
-      (list #'and-intro (ffirst args) (build-and-intros (rest args)))
+      (list #'and-intro (build-and-intros-left-leaning (rest args)) (ffirst args))
       (ffirst args))
-    (throw (ex-info "Empty and* intro list (please report)" {:args args}))))
+    (throw (ex-info "Empty and* intro list (please report)" {:args (reverse args)}))))
 
-;; (build-and-intros '[[a1 A1]])
+;; (build-and-intros-left-leaning '[[a1 A1]])
 ;; => a1
 
-;; (build-and-intros '[[a1 A1] [a2 A2]])
+;; (build-and-intros-left-leaning '[[a1 A1] [a2 A2]])
 ;; => (#'latte-prelude.prop/and-intro a1 a2)
 
-;; (build-and-intros '[[a1 A1] [a2 A2] [a3 A3]])
-;; => (#'latte-prelude.prop/and-intro a1 (#'latte-prelude.prop/and-intro a2 a3))
+;; (build-and-intros-left-leaning '[[a3 A3] [a2 A2] [a1 A1]])
+;; => (#'latte-prelude.prop/and-intro (#'latte-prelude.prop/and-intro a1 a2) a3)
+
+;; (build-and-intros-left-leaning '[[a4 A4] [a3 A3] [a2 A2] [a1 A1]])
+;; => (#'latte-prelude.prop/and-intro (#'latte-prelude.prop/and-intro (#'latte-prelude.prop/and-intro a1 a2) a3) a4)
 
 (defimplicit* and-intro*
   "A nary variant of [[and-intro]], the introduction rule for conjunction.
 It builds a proof of `(and* A1 A2 ... AN)` from proofs of the `Ai`'s"
   [def-env ctx & args]
-  (build-and-intros args))
+  (build-and-intros-left-leaning (reverse args)))
 
 (example [[A :type] [B :type] [C :type]]
     (==> A B C
          (and* A B C))
   (assume [a _ b _ c _]
     (have <a> _ :by (and-intro* a b c)))
+  (qed <a>))
+
+(defn build-and-intros-right-leaning [args]
+  (if (seq args)
+    (if (seq (rest args))
+      (list #'and-intro (ffirst args) (build-and-intros-right-leaning (rest args)))
+      (ffirst args))
+    (throw (ex-info "Empty r-and* intro list (please report)" {:args args}))))
+
+;; (build-and-intros-right-leaning '[[a1 A1]])
+;; => a1
+
+;; (build-and-intros-right-leaning '[[a1 A1] [a2 A2]])
+;; => (#'latte-prelude.prop/and-intro a1 a2)
+
+;; (build-and-intros-right-leaning '[[a1 A1] [a2 A2] [a3 A3]])
+;; => (#'latte-prelude.prop/and-intro a1 (#'latte-prelude.prop/and-intro a2 a3))
+
+(defimplicit* r-and-intro*
+  "A nary \"right-leaning\" variant of [[and-intro]], the introduction rule for conjunction.
+It builds a proof of `(r-and* A1 A2 ... AN)` from proofs of the `Ai`'s
+
+Remark: the default \"left-leaning\" varient is [[and-intro*]]."
+  [def-env ctx & args]
+  (build-and-intros-right-leaning args))
+
+(example [[A :type] [B :type] [C :type]]
+    (==> A B C
+         (r-and* A B C))
+  (assume [a _ b _ c _]
+    (have <a> _ :by (r-and-intro* a b c)))
   (qed <a>))
 
 (defn build-and-elim [def-env ctx n and-term and-type]
