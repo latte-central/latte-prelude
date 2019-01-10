@@ -830,9 +830,64 @@ Then `(or-intro* A1 ... p ... An)` is a proof of `(or* A1 ... Ai ... An)`."
   (qed <a>))
 
 ;; or-elim* with n branches is a little bit trickier (and useful)
+
+(defn build-or-elim* [def-env ctx index or-term or-type goal-type case-proofs]
+  (case (count case-proofs)
+    (0 1) (throw (ex-info "Cannot build nary or-elim*: missing case proof(s)."
+                          {:case-term or-term
+                           :case-type or-type
+                           :case-proofs case-proofs}))
+    2 (list #'or-elim or-term goal-type (first case-proofs) (second case-proofs))
+    ;; more than 2
+    (try (let [[L R] (decompose-or-type def-env ctx or-type)]
+           (let [Hcase (gensym (str "Hcase" index))]
+             (list #'or-elim or-term goal-type (first case-proofs)
+                   (list 'λ [Hcase R]
+                         (build-or-elim* def-env ctx (inc index) Hcase R goal-type (rest case-proofs))))))
+         (catch Exception _
+           (throw (ex-info "Cannot build nary or-elim*: case term/type is not a disjunction"
+                           {:case-term or-term
+                            :case-type or-type
+                            :case-proofs case-proofs}))))))
+
+;; Hor :: (or A1 (or A2 ... (or An-1 An)))
+;; (or-elim* Hor T proof1 proof2 ... proofN-1 proofN)
+;; ≡ (or-elim Hor T
+;;            proof1
+;;            (lambda [Hc1 (or A2 ... (or An-1 An))]
+;;               (or-elim Hc1 T
+;;                        proof2
+;;                        ...
+;;                          proofN-2
+;;                          (lambda [HcN (or An-1 An)]
+;;                            (or-elim HcN T proofN-1 proofN)))))
+
+
+(defimplicit* or-elim*
+  "Elimination rule for n-ary disjunction `(or* T1 T2 ... TN)`.
+
+```clojure
+(or-elim* or-term goal-type case1 case2 ... caseN)
+```
+is the same thing as the repeated and nested uses of `[[or-elim]]` for binary disjunction.
+"
+  [def-env ctx & args]
+  (when (empty? args)
+    (throw (ex-info "Cannot build nary or-elim*: missing arguments" {:args args})))
+  (let [[[or-term or-type] & args] args]
+    (when (empty? args)
+      (throw (ex-info "Cannot build nary or-elim*: missing arguments such as goal type"
+                      {:or-term or-term
+                       :or-type or-type
+                       :args args})))
+    (let [[[goal-type _] & cases] args]
+      (let [elim-term (build-or-elim* def-env ctx 1 or-term or-type goal-type (map first cases))]
+        ;; (println "elim-term =" elim-term)
+        elim-term))))
+
 ;; here's a three branches example :
 
-(try-example [[A :type] [B :type] [C :type] [D :type]]
+(example [[A :type] [B :type] [C :type] [D :type]]
     (==>
      ;; the disjunctive hypothesis
      (or A (or B C))
@@ -855,7 +910,29 @@ Then `(or-intro* A1 ... p ... An)` is a proof of `(or* A1 ... Ai ... An)`."
                                   (or-elim Hc1 D proof2 proof3)))))
   (qed <elim>))
 
-(try-example [[A :type] [B :type] [C :type] [D :type] [E :type]]
+(example [[A :type] [B :type] [C :type] [D :type]]
+    (==>
+     ;; the disjunctive hypothesis
+     (or* A B C)
+     ;; case 1
+     (==> A D)
+     ;; case 2
+     (==> B D)
+     ;; case 3
+     (==> C D)
+     ;; conclusion
+     D)
+  ;; proof
+  (assume [Hor _
+           proof1 (==> A D)
+           proof2 (==> B D)
+           proof3 (==> C D)]
+    (have <elim> D :by (or-elim* Hor D proof1 proof2 proof3)))
+  (qed <elim>))
+
+;; four branches ?
+
+(example [[A :type] [B :type] [C :type] [D :type] [E :type]]
     (==>
      ;; the disjunctive hypothesis
      (or A (or B (or C D)))
@@ -884,6 +961,28 @@ Then `(or-intro* A1 ... p ... An)` is a proof of `(or* A1 ... Ai ... An)`."
                                              (or-elim Hc2 E proof3 proof4)))))))
   (qed <elim>))
 
+(example [[A :type] [B :type] [C :type] [D :type] [E :type]]
+    (==>
+     ;; the disjunctive hypothesis
+     (or A (or B (or C D)))
+     ;; case 1
+     (==> A E)
+     ;; case 2
+     (==> B E)
+     ;; case 3
+     (==> C E)
+     ;; case 4
+     (==> D E)
+     ;; conclusion
+     E)
+  ;; proof
+  (assume [Hor _
+           proof1 (==> A E)
+           proof2 (==> B E)
+           proof3 (==> C E)
+           proof4 (==> D E)]
+    (have <elim> E :by (or-elim* Hor E proof1 proof2 proof3 proof4)))
+  (qed <elim>))
 
 (defthm or-not-elim-left
   "An elimination rule for disjunction, simpler than [[or-elim]].
