@@ -13,8 +13,7 @@
              :as latte
              :refer [defthm defimplicit defimplicit*
                      definition example try-example defnotation
-                     lambda forall proof assume have qed]
-             ]))
+                     lambda forall proof assume have qed]]))
 
 (defthm impl-refl
   "Implication is reflexive."
@@ -716,8 +715,6 @@ To prove a proposition `C` under the assumption  `(or A B)`:
 ;;          (forall [_ (forall [_ B] C)]
 ;;               C)))
 
-
-
 (defn decompose-or-type [def-env ctx t]
   (decomposer
    (fn [t]
@@ -754,7 +751,12 @@ This is (for now) the easiest rule to use for proof-by-cases."
 disjunction is associative. By convention we have:
 ```
 (or* p1 p2 ... pN-1 pN) ≡ (or p1 (or p2 (or ... (or pN-1 pN))))
-```"
+```
+
+Remark: unlike for conjunction, there is no real motivation to
+use a left-leaning variant by default, so the simpler right-leaning
+encoding is prefered.
+"
   [& ps]
   (if (seq ps)
     [:ok (mk-nary-op-right-leaning #'or ps)]
@@ -826,6 +828,61 @@ Then `(or-intro* A1 ... p ... An)` is a proof of `(or* A1 ... Ai ... An)`."
   (assume [c C]
     (have <a> _ :by (or-intro* A B c)))
   (qed <a>))
+
+;; or-elim* with n branches is a little bit trickier (and useful)
+;; here's a three branches example :
+
+(try-example [[A :type] [B :type] [C :type] [D :type]]
+    (==>
+     ;; the disjunctive hypothesis
+     (or (or A B) C)
+     ;; case 1
+     (==> A D)
+     ;; case 2
+     (==> B D)
+     ;; case 3
+     (==> C D)
+     ;; conclusion
+     D)
+  ;; proof
+  (assume [Hor _
+           proof1 (==> A D)
+           proof2 (==> B D)
+           proof3 (==> C D)]
+    (have <elim> D :by (or-elim Hor D
+                                (lambda [Hc1 (or A B)]
+                                  (or-elim Hc1 D proof1 proof2))
+                                proof3)))
+  (qed <elim>))
+
+(try-example [[A :type] [B :type] [C :type] [D :type] [E :type]]
+    (==>
+     ;; the disjunctive hypothesis
+     (or (or (or A B) C)  D)
+     ;; case 1
+     (==> A E)
+     ;; case 2
+     (==> B E)
+     ;; case 3
+     (==> C E)
+     ;; case 4
+     (==> D E)
+     ;; conclusion
+     E)
+  ;; proof
+  (assume [Hor _
+           proof1 (==> A E)
+           proof2 (==> B E)
+           proof3 (==> C E)
+           proof4 (==> D E)]
+    (have <elim> E :by (or-elim Hor E
+                                (lambda [Hc1 (or (or A B) C)]
+                                  (or-elim Hc1 E
+                                           (lambda [Hc2 (or A B)]
+                                             (or-elim Hc2 E proof1 proof2))
+                                           proof3))
+                                proof4)))
+  (qed <elim>))
 
 
 (defthm or-not-elim-left
