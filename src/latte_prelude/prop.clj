@@ -835,7 +835,7 @@ Then `(or-intro* A1 ... p ... An)` is a proof of `(or* A1 ... Ai ... An)`."
 (try-example [[A :type] [B :type] [C :type] [D :type]]
     (==>
      ;; the disjunctive hypothesis
-     (or (or A B) C)
+     (or A (or B C))
      ;; case 1
      (==> A D)
      ;; case 2
@@ -850,15 +850,15 @@ Then `(or-intro* A1 ... p ... An)` is a proof of `(or* A1 ... Ai ... An)`."
            proof2 (==> B D)
            proof3 (==> C D)]
     (have <elim> D :by (or-elim Hor D
-                                (lambda [Hc1 (or A B)]
-                                  (or-elim Hc1 D proof1 proof2))
-                                proof3)))
+                                proof1
+                                (lambda [Hc1 (or B C)]
+                                  (or-elim Hc1 D proof2 proof3)))))
   (qed <elim>))
 
 (try-example [[A :type] [B :type] [C :type] [D :type] [E :type]]
     (==>
      ;; the disjunctive hypothesis
-     (or (or (or A B) C)  D)
+     (or A (or B (or C D)))
      ;; case 1
      (==> A E)
      ;; case 2
@@ -876,12 +876,12 @@ Then `(or-intro* A1 ... p ... An)` is a proof of `(or* A1 ... Ai ... An)`."
            proof3 (==> C E)
            proof4 (==> D E)]
     (have <elim> E :by (or-elim Hor E
-                                (lambda [Hc1 (or (or A B) C)]
+                                proof1
+                                (lambda [Hc1 (or B (or C D))]
                                   (or-elim Hc1 E
-                                           (lambda [Hc2 (or A B)]
-                                             (or-elim Hc2 E proof1 proof2))
-                                           proof3))
-                                proof4)))
+                                           proof2
+                                           (lambda [Hc2 (or C D)]
+                                             (or-elim Hc2 E proof3 proof4)))))))
   (qed <elim>))
 
 
