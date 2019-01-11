@@ -535,6 +535,13 @@ is not a conjunction."
 
 (example [[A :type] [B :type] [C :type]]
     (==> (and* A B C)
+         A)
+  (assume [H (and* A B C)]
+    (have <a> A :by (and-elim* 1 H)))
+  (qed <a>))
+
+(example [[A :type] [B :type] [C :type]]
+    (==> (and* A B C)
          B)
   (qed (lambda [H (and* A B C)]
          (and-elim* 2 H))))
