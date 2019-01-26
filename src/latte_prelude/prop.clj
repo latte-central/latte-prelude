@@ -666,9 +666,10 @@ This is the introduction by the left operand."
   (qed <a>))
 
 (defimplicit or-intro-left
-  "Left introduction for disjunction, an implicit version of [[or-intro-left-thm]]."
-  [def-env ctx [left-term left-type] [right-type right-kind]]
-  [(list #'or-intro-left-thm left-type right-type) left-term])
+  "Left introduction for a disjunction `(or A B)`, with `proofA` a proof of `A`.
+ This is an implicit version of [[or-intro-left-thm]]."
+  [def-env ctx [proofA A] [B kindB]]
+  [(list #'or-intro-left-thm A B) proofA])
 
 (defthm or-intro-right-thm
   "Introduction rule for logical disjunction.
@@ -686,9 +687,10 @@ This is the introduction by the right operand."
   (qed <a>))
 
 (defimplicit or-intro-right
-  "Right introduction for disjunction, an implicit version of [[or-intro-right-thm]]."
-  [def-env ctx [left-type left-kind] [right-term right-type]]
-  [(list #'or-intro-right-thm left-type right-type) right-term])
+  "Right introduction for a disjunction `(or A B)`, with `proofB` a proof of `B`.
+ This is an implicit version of [[or-intro-left-thm]]."
+  [def-env ctx [A kindA] [proofB B]]
+  [(list #'or-intro-right-thm A B) proofB])
 
 (defthm or-elim-thm
   "Elimination rule for logical disjunction.
