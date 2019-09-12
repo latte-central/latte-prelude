@@ -17,7 +17,7 @@
             [latte-prelude.prop :as p :refer [and]]
             [latte-prelude.equal :as eq :refer [equal equality]]))
 
-(definition ex-def
+(definition ex
   "The encoding for the existential quantifier.
 
 `(ex T P)` encodes the existential quantification
@@ -28,16 +28,10 @@
 Remark: this is a second-order, intuitionistic definition that
  is more general than the definition in classical logic.
 "
-  [[T :type] [P (==> T :type)]]
+  [[P (==> ?T :type)]]
   (forall [α :type]
     (==> (forall [x T] (==> (P x) α))
          α)))
-
-(defimplicit ex
-  "The existential quantified, an implicit version of [[ex-def]]."
-  [def-env ctx [P P-ty]]
-  (let [[T _] (p/decompose-impl-type def-env ctx P-ty)]
-    (list #'ex-def T P)))
 
 (defnotation exists
   "The existential quantification  `(exists [x T] P)`

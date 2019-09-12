@@ -8,7 +8,7 @@
             [latte-kernel.syntax :as stx]
             [latte-kernel.norm :as norm]
             [latte-kernel.unparser :as unparser]
-            [latte.utils :refer [set-opacity! decomposer]]
+            [latte.utils :as u :refer [set-opacity! decomposer]]
             [latte.core
              :as latte
              :refer [defthm defimplicit defimplicit*
@@ -58,6 +58,9 @@
                        :else 
                        (throw (ex-info "Not an implication type" {:type t}))))
               def-env ctx t))
+
+;; register implication as potential source of implicit type parameters
+(u/register-implicit-type-parameters-handler! '==> #'decompose-impl-type 2)
 
 (defimplicit impl-trans
   [def-env ctx [impl1 ty1] [impl2 ty2]]
