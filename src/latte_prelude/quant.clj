@@ -17,24 +17,6 @@
             [latte-prelude.prop :as p :refer [and]]
             [latte-prelude.equal :as eq :refer [equal equality]]))
 
-(macroexpand-1
-'(definition ex
-  "The encoding for the existential quantifier.
-
-`(ex P)` encodes the existential quantification
-
-> there exists an element of (implicit) type `T` such that the predicate
-> `P` holds for this element.
-
-Remark: this is a second-order, intuitionistic definition that
- is more general than the definition in classical logic.
-"
-  [[P (==> ?T :type)]]
-  (forall [α :type]
-    (==> (forall [x T] (==> (P x) α))
-         α)))
-)
-
 (definition ex
   "The encoding for the existential quantifier.
 

@@ -60,7 +60,7 @@
               def-env ctx t))
 
 ;; register implication as potential source of implicit type parameters
-(u/register-implicit-type-parameters-handler! '==> #'decompose-impl-type 2)
+(u/register-implicit-type-parameters-handler! '==> #'decompose-impl-type nil)
 
 (defimplicit impl-trans
   [def-env ctx [impl1 ty1] [impl2 ty2]]
