@@ -13,21 +13,23 @@
             [latte-prelude.equal :as eq :refer [equal]]
             [latte-prelude.quant :as q :refer [exists]]))
 
-(definition injective
+(macroexpand-1
+'(definition injective
   "An injective function."
-  [[f (==> ?T ?U)]]
+  [[?T :type] [?U :type] [f (==> T U)]]
   (forall [x y T]
     (==> (equal (f x) (f y))
          (equal x y))))
+)
 
 (definition surjective
   "A surjective function."
-  [[f (==> ?T ?U)]]
+  [[?T :type] [?U :type] [f (==> T U)]]
   (forall [y U] (exists [x T] (equal (f x) y))))
 
 (definition bijective
   "A bijective function."
-  [[f (==> ?T ?U)]]
+  [[?T :type] [?U :type] [f (==> T U)]]
   (and (injective f)
        (surjective f)))
 

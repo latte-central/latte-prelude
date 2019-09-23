@@ -205,11 +205,11 @@ This is thanks to substitutivity of `equal`, cf. [[eq-subst-impl]]."
   (let [[T x y] (decompose-equal-type def-env ctx eq-type)]
     [[(list #'eq-subst-prop-thm T P x y) eq-term] Px]))
 
-(alter-meta! #'eq-subst update-in [:arglists] (fn [_] (list '[[P (==> ?T :type)] [eq (equal x y)] [Px (P x)]])))
+(alter-meta! #'eq-subst update-in [:arglists] (fn [_] (list '[[P (==> T :type)] [eq (equal x y)] [Px (P x)]])))
 
 (defthm eq-cong-prop
   "Congruence property of equality."
-  [[f (==> ?T ?U)] [x ?T] [y ?T]]
+  [[?T :type] [?U :type] [f (==> T U)] [x T] [y T]]
   (==> (equal x y)
        (equal (f x) (f y))))
 
@@ -234,7 +234,7 @@ Proves `(equal (f x) (f y))` by congruence of `equal`, cf. [[eq-cong-prop]]."
         [T' U] (p/decompose-impl-type def-env ctx f-ty)]
     [(list #'eq-cong-prop-thm T U f x y) eq-term]))
 
-(alter-meta! #'eq-cong update-in [:arglists] (fn [_] (list '[[f (==> ?T ?U)] [eq (equal x y)]])))
+(alter-meta! #'eq-cong update-in [:arglists] (fn [_] (list '[[f (==> T U)] [eq (equal x y)]])))
 
 ;; now that we have intros and elims, we make equality opaque.
 (set-opacity! #'equality true)
