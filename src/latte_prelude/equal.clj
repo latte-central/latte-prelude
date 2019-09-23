@@ -184,7 +184,7 @@ etc.
 
 (defthm eq-subst-prop
   "Substitutivity property of equality. This is the main elimination rule."
-  [[P (==> ?T :type)] [x ?T] [y ?T]]
+  [[?T :type] [P (==> T :type)] [x T] [y T]]
   (==> (equal x y)
        (P x)
        (P y)))
