@@ -17,7 +17,7 @@
 
 (defthm impl-refl
   "Implication is reflexive."
-  [[A :type]]
+  [A :type]
   (==> A A))
 
 (proof 'impl-refl
@@ -28,7 +28,7 @@
 
 (defthm impl-ignore
   "A variant of reflexivity."
-  [[A :type] [B :type]]
+  [A :type, B :type]
   (==> A B A))
 
 (proof 'impl-ignore
@@ -38,7 +38,7 @@
 
 (defthm impl-trans-thm
   "Implication is transitive."
-  [[A :type] [B :type] [C :type]]
+  [A :type, B :type, C :type]
   (==> (==> A B)
        (==> B C)
        (==> A C)))
@@ -80,7 +80,7 @@
 (defthm ex-falso
   "Ex falso sequitur quodlibet
    (proof by contradiction, elimination for absurdity)."
-  [[A :type]]
+  [A :type]
   (==> absurd A))
 
 (proof 'ex-falso   
@@ -90,12 +90,12 @@
 
 (definition not
   "Logical negation."
-  [[A :type]]
+  [A :type]
   (==> A absurd))
 
 (defthm absurd-intro
   "Introduction rule for absurdity."
-  [[A :type]]
+  [A :type]
   (==> A (not A)
        absurd))
 
@@ -110,7 +110,7 @@
 
 This can be seen as an introduction rule for ¬¬ (not-not) propositions.
 Note that double-negation is a law of classical (non-intuitionistic) logic."
-  [[A :type]]
+  [A :type]
   (==> A (not (not A))))
 
 (proof 'impl-not-not   
@@ -135,7 +135,7 @@ Note that double-negation is a law of classical (non-intuitionistic) logic."
 
 (definition and
   "logical conjunction."
-  [[A :type] [B :type]]
+  [A :type, B :type]
   (forall [C :type]
     (==> (==> A B C)
          C)))
@@ -162,7 +162,7 @@ Note that double-negation is a law of classical (non-intuitionistic) logic."
 
 (defthm and-intro-thm
   "Introduction rule for logical conjunction."
-  [[A :type] [B :type]]
+  [A :type, B :type]
   (==> A B
        (and A B)))
 
@@ -192,7 +192,7 @@ This is an implicit version of [[and-intro-thm]]."
 (defthm and-elim-left-thm
   "Elimination rule for logical conjunction.
    This one only keeps the left-side of the conjunction"
-  [[A :type] [B :type]]
+  [A :type, B :type]
   (==> (and A B)
        A))
 
@@ -235,7 +235,7 @@ This is an implicit version of [[and-elim-left-thm]]."
 (defthm and-elim-right-thm
   "Elimination rule for logical conjunction.
    This one only keeps the right-side of the conjunction"
-  [[A :type] [B :type]]
+  [A :type, B :type]
   (==> (and A B)
        B))
 
@@ -259,7 +259,7 @@ This is an implicit version of [[and-elim-right-thm]]."
 
 (defthm and-sym-thm
   "Symmetry of conjunction."
-  [[A :type] [B :type]]
+  [A :type, B :type]
   (==> (and A B)
        (and B A)))
 
@@ -633,7 +633,7 @@ This is the right-leaning version of the default [[and-elim*]]."
 
 (definition or
   "logical disjunction."
-  [[A :type] [B :type]]
+  [A :type, B :type]
   (forall [C :type]
     (==> (==> A C)
          (==> B C)
@@ -656,7 +656,7 @@ This is the right-leaning version of the default [[and-elim*]]."
 (defthm or-intro-left-thm
   "Introduction rule for logical disjunction.
 This is the introduction by the left operand."
-  [[A :type] [B :type]]
+  [A :type, B :type]
   (==> A
        (or A B)))
 
@@ -677,7 +677,7 @@ This is the introduction by the left operand."
 (defthm or-intro-right-thm
   "Introduction rule for logical disjunction.
 This is the introduction by the right operand."
-  [[A :type] [B :type]]
+  [A :type, B :type]
   (==> B
        (or A B)))
 
@@ -702,7 +702,7 @@ To prove a proposition `C` under the assumption  `(or A B)`:
  - first case: assume `A` and prove `C` 
  - second case: assume `B` and prove `C`
 "
-  [[A :type] [B :type]]
+  [A :type, B :type]
   (==> (or A B)
        (forall [C :type]
          (==> (==> A C)
@@ -999,7 +999,7 @@ is the same thing as the repeated and nested uses of `[[or-elim]]` for binary di
 (defthm or-not-elim-left
   "An elimination rule for disjunction, simpler than [[or-elim]].
 This eliminates to the left operand."
-  [[A :type] [B :type]]
+  [A :type, B :type]
   (==> (or A B) (not B)
        A))
 
@@ -1017,7 +1017,7 @@ This eliminates to the left operand."
 (defthm or-not-elim-right
   "An elimination rule for disjunction, simpler than [[or-elim]].
 This eliminates to the right operand."
-  [[A :type] [B :type]]
+  [A :type, B :type]
   (==> (or A B) (not A)
        B))
 
@@ -1033,7 +1033,7 @@ This eliminates to the right operand."
 
 (defthm or-sym-thm
   "Symmetry of disjunction."
-  [[A :type] [B :type]]
+  [A :type, B :type]
   (==> (or A B)
        (or B A)))
 
@@ -1054,7 +1054,7 @@ This eliminates to the right operand."
 
 (defthm or-not-impl-elim
   "An alternative elimination rule for disjunction."
-  [[A :type] [B :type]]
+  [A :type, B :type]
   (==> (or A B)
        (==> (not A) B)))
 
@@ -1073,7 +1073,7 @@ This eliminates to the right operand."
   (qed <e>))
 
 (defthm or-assoc-thm
-  [[A :type] [B :type] [C :type]]
+  [A :type, B :type, C :type]
   (==> (or (or A B) C)
        (or A (or B C))))
 
@@ -1104,7 +1104,7 @@ This eliminates to the right operand."
 
 
 (defthm or-assoc-conv-thm
-  [[A :type] [B :type] [C :type]]
+  [A :type, B :type, C :type]
   (==> (or A (or B C))
        (or (or A B) C)))
 
@@ -1145,13 +1145,13 @@ This eliminates to the right operand."
 
 (definition <=>
   "Logical equivalence or 'if and only if'."
-  [[A :type] [B :type]]
+  [A :type, B :type]
   (and (==> A B)
        (==> B A)))
 
 (defthm iff-refl
   "Reflexivity of logical equivalence."
-  [[A :type]]
+  [A :type]
   (<=> A A))
 
 (proof 'iff-refl   
@@ -1165,7 +1165,7 @@ This eliminates to the right operand."
 
 (defthm iff-intro-thm
   "Introduction rule for logical equivalence."
-  [[A :type] [B :type]]
+  [A :type, B :type]
   (==> (==> A B)
        (==> B A)
        (<=> A B)))
@@ -1190,7 +1190,7 @@ This eliminates to the right operand."
 (defthm iff-elim-if-thm
   "Elimination rule for logical equivalence.
    This one only keeps the if part of the equivalence."
-  [[A :type] [B :type]]
+  [A :type, B :type]
   (==> (<=> A B)
        (==> A B)))
 
@@ -1222,7 +1222,7 @@ This eliminates to the right operand."
 (defthm iff-elim-only-if-thm
   "Elimination rule for logical equivalence.
    This one only keeps the only-if part of the equivalence."
-  [[A :type] [B :type]]
+  [A :type, B :type]
   (==> (<=> A B)
        (==> B A)))
 
@@ -1242,7 +1242,7 @@ This eliminates to the right operand."
 
 (defthm iff-sym-thm
   "Symmetry of logical equivalence."
-  [[A :type] [B :type]]
+  [A :type, B :type]
   (==> (<=> A B)
        (<=> B A)))
 
@@ -1264,7 +1264,7 @@ This eliminates to the right operand."
 
 (defthm iff-trans-thm
   "Transitivity of logical equivalence."
-  [[A :type] [B :type] [C :type]]
+  [A :type, B :type, C :type]
   (==> (<=> A B)
        (<=> B C)
        (<=> A C)))
