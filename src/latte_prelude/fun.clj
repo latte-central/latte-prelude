@@ -15,25 +15,25 @@
 
 (definition injective
   "An injective function."
-  [[f (==> ?T ?U)]]
+  [[?T :type] [?U :type] [f (==> T U)]]
   (forall [x y T]
     (==> (equal (f x) (f y))
          (equal x y))))
 
 (definition surjective
   "A surjective function."
-  [[f (==> ?T ?U)]]
+  [[?T :type] [?U :type] [f (==> T U)]]
   (forall [y U] (exists [x T] (equal (f x) y))))
 
 (definition bijective
   "A bijective function."
-  [[f (==> ?T ?U)]]
+  [[?T :type] [?U :type] [f (==> T U)]]
   (and (injective f)
        (surjective f)))
 
 (defthm bijective-is-surjective
   "A bijection is a surjection."
-  [[f (==> ?T ?U)]]
+  [[?T :type] [?U :type] [f (==> T U)]]
   (==> (bijective f)
        (surjective f)))
 
@@ -44,7 +44,7 @@
 
 (defthm bijective-is-injective
   "A bijection is an injection."
-  [[f (==> ?T ?U)]]
+  [[?T :type] [?U :type] [f (==> T U)]]
   (==> (bijective f)
        (injective f)))
 
@@ -55,12 +55,12 @@
 
 (definition compose
   "The composition of two functions."
-  [[f (==> ?U ?V)] [g [==> ?T ?U]]]
+  [[?T :type] [?U :type] [?V :type] [f (==> U V)] [g [==> T U]]]
   (lambda [x T] (f (g x))))
 
 (defthm compose-injective
   "The composition of two injective functions is injective."
-  [[f (==> ?U ?V)] [g [==> ?T ?U]]]
+  [[?T :type] [?U :type] [?V :type] [f (==> U V)] [g [==> T U]]]
   (==> (injective f)
        (injective g)
        (injective (compose f g))))
@@ -81,7 +81,7 @@
 
 (defthm injective-single
   "An injective function has at most one antecedent for each image."
-  [[f (==> ?T ?U)]]
+  [[?T :type] [?U :type] [f (==> T U)]]
   (==> (injective f)
        (forall [y U] (q/single (lambda [x T] (equal (f x) y))))))
 
@@ -100,7 +100,7 @@
 
 (defthm bijective-unique
   "A bijective function has exactly one antecedent for each image."
-  [[f (==> ?T ?U)]]
+  [[?T :type] [?U :type] [f (==> T U)]]
   (==> (bijective f)
        (forall [y U] (q/unique (lambda [x T] (equal (f x) y))))))
 
@@ -121,14 +121,14 @@
 
 (definition inverse
   "The inverse of bijective function `f`."
-  [[f (==> ?T ?U)] [b (bijective f)]]
+  [[?T :type] [?U :type] [f (==> T U)] [b (bijective f)]]
   (lambda [y U]
     (q/the (lambda [x T] (equal (f x) y))
            ((bijective-unique f) b y))))
 
 (defthm inverse-prop
   "The basic property of the inverse of a bijective function `f`."
-  [[f (==> ?T ?U)] [b (bijective f)]]
+  [[?T :type] [?U :type] [f (==> T U)] [b (bijective f)]]
   (forall [y U] (equal (f ((inverse f b) y)) y)))
 
 (proof 'inverse-prop-thm  
@@ -141,7 +141,7 @@
 (defthm inverse-prop-conv
   "The basic property of the inverse function,
  the converse of [[inverse-prop]]."
-  [[f (==> ?T ?U)] [b (bijective f)]]
+  [[?T :type] [?U :type] [f (==> T U)] [b (bijective f)]]
   (forall [x T] (equal ((inverse f b) (f x)) x)))
 
 (proof 'inverse-prop-conv-thm  
@@ -156,7 +156,7 @@
 
 (defthm inverse-surjective
   "The inverse function of a bijection, is surjective."
-  [[f (==> ?T ?U)] [b (bijective f)]]
+  [[?T :type] [?U :type] [f (==> T U)] [b (bijective f)]]
   (surjective (inverse f b)))
 
 (proof 'inverse-surjective-thm 
@@ -174,7 +174,7 @@
 
 (defthm inverse-injective
   "The inverse function of a bijection, is injective."
-  [[f (==> ?T ?U)] [b (bijective f)]]
+  [[?T :type] [?U :type] [f (==> T U)] [b (bijective f)]]
   (injective (inverse f b)))
 
 (proof 'inverse-injective-thm 
@@ -198,12 +198,14 @@
 
 (defthm inverse-bijective
   "The inverse of a bijection is a bijection."
-  [[f (==> ?T ?U)] [b (bijective f)]]
+  [[?T :type] [?U :type] [f (==> T U)] [b (bijective f)]]
   (bijective (inverse f b)))
 
 (proof 'inverse-bijective-thm
   (have <a> _ :by (p/and-intro (inverse-injective f b)
                                (inverse-surjective f b)))
   (qed <a>))
+
+
 
 

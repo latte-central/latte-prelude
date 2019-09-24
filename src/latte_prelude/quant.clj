@@ -28,7 +28,7 @@
 Remark: this is a second-order, intuitionistic definition that
  is more general than the definition in classical logic.
 "
-  [[P (==> ?T :type)]]
+  [[?T :type] [P (==> T :type)]]
   (forall [α :type]
     (==> (forall [x T] (==> (P x) α))
          α)))
@@ -46,7 +46,7 @@ Remark: this is a second-order, intuitionistic definition that
 
 (defthm ex-elim
   "The (intuitionistic) elimination rule for the existential quantifier."
-  [[P (==> ?T :type)] [A :type]]
+  [[?T :type] [P (==> T :type)] [A :type]]
   (==> (ex P)
        (forall [x T] (==> (P x) A))
        A))
@@ -61,7 +61,7 @@ Remark: this is a second-order, intuitionistic definition that
 
 (defthm ex-intro
   "The introduction rule for the existential quantifier."
-  [[P (==> ?T :type)] [x ?T]]
+  [[?T :type] [P (==> T :type)] [x T]]
   (==> (P x)
        (ex P)))
 
@@ -78,7 +78,7 @@ Remark: this is a second-order, intuitionistic definition that
 
 (definition single
   "The constraint that \"there exists at most\"..."
-  [[P (==> ?T :type)]]
+  [[?T :type] [P (==> T :type)]]
   (forall [x y T]
     (==> (P x)
          (P y)
@@ -86,7 +86,7 @@ Remark: this is a second-order, intuitionistic definition that
 
 (defthm single-intro
   "Introduction rule for [[single]]."
-  [[P (==> ?T :type)]]
+  [[?T :type] [P (==> T :type)]]
   (==> (forall [x y T]
                (==> (P x)
                     (P y)
@@ -103,7 +103,7 @@ Remark: this is a second-order, intuitionistic definition that
 
 (defthm single-elim
   "Elimination rule for [[single]]."
-  [[P (==> ?T :type)] [x ?T] [y ?T]]
+  [[?T :type] [P (==> T :type)] [x T] [y T]]
   (==> (single P)
        (P x)
        (P y)
@@ -119,7 +119,7 @@ Remark: this is a second-order, intuitionistic definition that
 
 (definition unique
   "The constraint that \"there exists a unique\" ..."
-  [[P (==> ?T :type)]]
+  [[?T :type] [P (==> T :type)]]
   (and (ex P)
        (single P)))
 
@@ -157,7 +157,7 @@ This is the implicit version of the axiom [[the-ax]]."
 
 (defthm the-lemma
   "The unique element is ... unique."
-  [[P (==> ?T :type)] [u (unique P)]]
+  [[?T :type] [P (==> T :type)] [u (unique P)]]
   (forall [y T]
           (==> (P y)
                (equal y (the P u)))))
@@ -170,4 +170,6 @@ This is the implicit version of the axiom [[the-ax]]."
     (have <c> (equal y (the P u)) 
           :by ((single-elim P y (the P u)) <a> Hy <b>)))
   (qed <c>))
+
+
 
