@@ -171,3 +171,5 @@ This is the implicit version of the axiom [[the-ax]]."
           :by ((single-elim P y (the P u)) <a> Hy <b>)))
   (qed <c>))
 
+
+

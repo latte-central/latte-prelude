@@ -5,7 +5,7 @@
             :url "http://opensource.org/licenses/MIT"}
   :dependencies [[org.clojure/clojure "1.10.1"]
                  [latte "1.0b5-SNAPSHOT"]]
-  :main latte-prelude.main
+  :main ^:skip-aot latte-prelude.main
   :aliases {"certify" ["run" ":certify"]
             "clear-cert" ["run" ":clear-cert"]}
   :codox {:output-path "docs"
