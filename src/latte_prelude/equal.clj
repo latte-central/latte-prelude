@@ -12,7 +12,7 @@
 (definition equality
   "The intuitionistic, second-order definition of equality.
 This corresponds to Leibniz's *indiscernibility of identicals*."
-  [[T :type] [x T] [y T]]
+  [T :type, x T, y T]
   (forall [P (==> T :type)]
           (<=> (P x) (P y))))
 
@@ -38,7 +38,7 @@ This is an implicit version of [[equality]]."
 (defthm eq-intro-thm
   "Introduction rule for [[equal]]. This is useful because
 equality is opaque by default."
-  [[T :type] [x T] [y T]]
+  [T :type, x T, y T]
   (==> (forall [P (==> T :type)]
                (<=> (P x) (P y)))
        (equal x y)))
@@ -59,7 +59,7 @@ The type parameter `T` is implicit, cf. [[eq-intro-thm]] for the explicit versio
 
 (defthm eq-refl-thm
   "The reflexivity property of equality."
-  [[T :type] [x T]]
+  [T :type, x T]
   (equal x x))
 
 (proof 'eq-refl-thm 
@@ -76,7 +76,7 @@ The type parameter `T` is implicit, cf. [[eq-intro-thm]] for the explicit versio
 
 (defthm eq-sym-thm
   "The symmetry property of equality."
-  [[T :type] [x T] [y T]]
+  [T :type, x T, y T]
   (==> (equal x y)
        (equal y x)))
 
@@ -98,7 +98,7 @@ Proves `(equal y x)` from `eq-proof` by symmetry of equality, cf. [[eq-sym-thm]]
 
 (defthm eq-trans-thm
   "The transitivity property of equality."
-  [[T :type] [x T] [y T] [z T]]
+  [T :type, [x y z T]]
   (==> (equal x y)
        (equal y z)
        (equal x z)))
@@ -184,7 +184,7 @@ etc.
 
 (defthm eq-subst-prop
   "Substitutivity property of equality. This is the main elimination rule."
-  [[?T :type] [P (==> T :type)] [x T] [y T]]
+  [?T :type, P (==> T :type), x T, y T]
   (==> (equal x y)
        (P x)
        (P y)))
@@ -209,7 +209,7 @@ This is thanks to substitutivity of `equal`, cf. [[eq-subst-impl]]."
 
 (defthm eq-cong-prop
   "Congruence property of equality."
-  [[?T :type] [?U :type] [f (==> T U)] [x T] [y T]]
+  [?T :type, ?U :type, f (==> T U), x T, y T]
   (==> (equal x y)
        (equal (f x) (f y))))
 

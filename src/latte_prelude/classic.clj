@@ -18,7 +18,7 @@ be done in a qualified way, i.e. favor `classic/not-not-impl`
 
 This axiom can be assumed for classical
 (sometimes called \"non-constructive\") reasoning."
-  [[A :type]]
+  [A :type]
   (or A (not A)))
 
 (defthm not-not-impl
@@ -27,7 +27,7 @@ This axiom can be assumed for classical
 (the only-if part of double negation).
 
 This can be seen as an elimination rule for ¬¬ (not-not) propositions."
-  [[A :type]]
+  [A :type]
   (==> (not (not A)) A))
 
 (proof 'not-not-impl 
@@ -48,7 +48,7 @@ This can be seen as an elimination rule for ¬¬ (not-not) propositions."
 
 (defthm not-not
   "The double-negation law of classical logic."
-  [[A :type]]
+  [A :type]
   (<=> A (not (not A))))
 
 (proof 'not-not
@@ -62,7 +62,7 @@ This can be seen as an elimination rule for ¬¬ (not-not) propositions."
 
 Remark: this introduction is only provable in
 classical logic."
-  [[A :type] [B :type]]
+  [A :type, B :type]
   (==> (==> (not A) B)
        (or A B)))
 

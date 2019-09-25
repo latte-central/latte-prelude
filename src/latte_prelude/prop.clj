@@ -1264,7 +1264,7 @@ This eliminates to the right operand."
 
 (defthm iff-trans-thm
   "Transitivity of logical equivalence."
-  [A :type, B :type, C :type]
+  [[A B C :type]]
   (==> (<=> A B)
        (<=> B C)
        (<=> A C)))
