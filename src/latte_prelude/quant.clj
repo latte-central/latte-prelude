@@ -29,9 +29,7 @@ Remark: this is a second-order, intuitionistic definition that
  is more general than the definition in classical logic.
 "
   [?T :type, P (==> T :type)]
-  (forall [α :type]
-    (==> (forall [x T] (==> (P x) α))
-         α)))
+  (Σ [t T] (P t)))
 
 (defnotation exists
   "The existential quantification  `(exists [x T] P)`
@@ -52,12 +50,10 @@ Remark: this is a second-order, intuitionistic definition that
        A))
 
 (proof 'ex-elim-thm
-  (assume [H1 (ex P)
-           H2 (forall [x T] (==> (P x) A))]
-    (have <a> (==> (forall [x T] (==> (P x) A))
-                   A) :by (H1 A))
-    (have <b> A :by (<a> H2)))
-  (qed <b>))
+  (qed
+    (λ [p (Σ [t T] (P t))]
+      (λ [f (Π [x T] (==> (P x) A))]
+        (f (pr1 p) (pr2 p))))))
 
 (defthm ex-intro
   "The introduction rule for the existential quantifier."
@@ -65,13 +61,7 @@ Remark: this is a second-order, intuitionistic definition that
   (==> (P x)
        (ex P)))
 
-(proof 'ex-intro-thm
-  (assume [H (P x)
-           A :type
-           y (forall [z T] (==> (P z) A))]
-    (have <a> (==> (P x) A) :by (y x))
-    (have <b> A :by (<a> H)))
-  (qed <b>))
+(proof 'ex-intro-thm (qed (λ [t (P x)] (pair x t))))
 
 ;; ex is made opaque
 (u/set-opacity! #'ex-def true)
@@ -167,9 +157,6 @@ This is the implicit version of the axiom [[the-ax]]."
   (have <b> (P (the P u)) :by (the-prop P u))
   (assume [y T
            Hy (P y)]
-    (have <c> (equal y (the P u)) 
+    (have <c> (equal y (the P u))
           :by ((single-elim P y (the P u)) <a> Hy <b>)))
   (qed <c>))
-
-
-

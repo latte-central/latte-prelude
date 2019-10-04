@@ -1,0 +1,13 @@
+{:paths ["src"]
+ :deps
+ {org.clojure/clojure {:mvn/version "1.10.1"}
+  latte {:git/url "https://github.com/latte-central/LaTTe"
+         :sha "4d7ae3da1e65297d142fd0fb791d721bc910fff6"}}
+ :aliases
+ {:test
+  {:extra-paths ["test"]
+   :extra-deps {lambdaisland/kaocha {:mvn/version "0.0-541"}
+                nubank/matcher-combinators {:mvn/version "1.2.1"}}
+   :main-opts ["-m" "kaocha.runner"
+               "--reporter" "kaocha.report/documentation"
+               "--plugin" "kaocha.plugin/print-invocations"]}}}
