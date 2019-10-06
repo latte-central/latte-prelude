@@ -63,9 +63,6 @@ Remark: this is a second-order, intuitionistic definition that
 
 (proof 'ex-intro-thm (qed (λ [t (P x)] (pair x t))))
 
-;; ex is made opaque
-(u/set-opacity! #'ex-def true)
-
 (definition single
   "The constraint that \"there exists at most\"..."
   [?T :type, P (==> T :type)]
