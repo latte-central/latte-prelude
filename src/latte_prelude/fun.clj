@@ -5,8 +5,8 @@
    This namespace provides some important properties about such
   functions.
 
-  The main source of properties is the consideration of LaTTe functions
- as arrows in a category."
+  The main source of properties is the consideration of types
+as objects and functions  as arrows in the so-called *LaTTe category*."
 
   (:refer-clojure :exclude [and or not identity])
 
