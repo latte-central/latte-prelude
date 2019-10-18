@@ -2,7 +2,7 @@
  :deps
  {org.clojure/clojure {:mvn/version "1.10.1"}
   latte {:git/url "https://github.com/latte-central/LaTTe"
-         :sha "4d7ae3da1e65297d142fd0fb791d721bc910fff6"}}
+         :sha "2f5c6c498eb4f577dd400fc5b141f60bc7a22011"}}
  :aliases
  {:test
   {:extra-paths ["test"]
