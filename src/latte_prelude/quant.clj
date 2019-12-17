@@ -204,40 +204,65 @@ Remark: this is a second-order, intuitionistic definition that
 (defimplicit the
  "The unique element descriptor.
 
-  `(the P u)` defines the unique object
- satisfying the predicate `P`. This is provided
- thanks to the uniqueness proof `u` (of type `(unique P)`.
-This is the implicit version of the axiom [[the-ax]]."
-  [def-env ctx [P P-type] [u u-type]]
-  (let [[T _] (p/decompose-impl-type def-env ctx P-type)]
+  `(the u)` defines the unique object
+ satisfying a predicate `P` as demonstrated by the proof `u` of type `(unique P)`. This is the implicit version of the axiom [[the-ax]]."
+  [def-env ctx [u u-type]]
+  (let [[exP _] (p/decompose-and-type def-env ctx u-type)
+        [T P] (decompose-ex-type def-env ctx exP)]
     (list #'the-ax T P u)))
+
+(example [[T :type] [P (==> T :type)]]
+    (==> (ex P)
+         (single P)
+         T)
+  ;; proof
+  (assume [Hex (ex P)
+           Hs (single P)]
+    (have <a> T :by (the (p/and-intro Hex Hs))))
+  (qed <a>))
 
 (defaxiom the-prop-ax
   "The property of the unique element descriptor."
   [T :type, P (==> T :type), u (unique P)]
-  (P (the P u)))
+  (P (the u)))
 
 (defimplicit the-prop
-  "The property of `the`, from [[the-prop-ax]]."
-  [def-env ctx [P P-type] [u u-type]]
-  (let [[T _] (p/decompose-impl-type def-env ctx P-type)]
+  "`(the-prop u)` proves `(P (the u))` from the proof `u` of `(unique P)`, for some property `P`. This is the main property of the unique descriptor [[the]], cf. [[the-prop-ax]]."
+  [def-env ctx [u u-type]]
+  (let [[exP _] (p/decompose-and-type def-env ctx u-type)
+        [T P] (decompose-ex-type def-env ctx exP)]
     (list #'the-prop-ax T P u)))
 
-(defthm the-lemma
+(example [[T :type] [P (==> T :type)] [u (unique P)]]
+    (P (the u))
+  ;; proof
+  (qed (the-prop u)))
+
+(defthm the-lemma-prop
   "The unique element is ... unique."
   [?T :type, P (==> T :type), u (unique P)]
   (forall [y T]
           (==> (P y)
-               (equal y (the P u)))))
+               (equal y (the u)))))
 
-(proof 'the-lemma-thm
+(proof 'the-lemma-prop-thm
   (have <a> (single P) :by (p/and-elim-right u))
-  (have <b> (P (the P u)) :by (the-prop P u))
+  (have <b> (P (the u)) :by (the-prop u))
   (assume [y T
            Hy (P y)]
-    (have <c> (equal y (the P u)) 
-          :by ((single-elim <a> y (the P u)) Hy <b>)))
+    (have <c> (equal y (the u)) 
+          :by ((single-elim <a> y (the u)) Hy <b>)))
   (qed <c>))
+
+(defimplicit the-lemma
+  "`(the-elmma u)` proves that `(forall [y T] (==> (P y) (equal y (the u))))`
+from the proof `u` that `(unique P)` for some property `P`."
+  [def-env ctx [u u-type]]
+  (let [[exP _] (p/decompose-and-type def-env ctx u-type)
+        [T P] (decompose-ex-type def-env ctx exP)]
+    (list #'the-lemma-prop-thm T P u)))
+
+
 
 
 
