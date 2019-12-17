@@ -81,9 +81,9 @@ as objects and functions  as arrows in the so-called *LaTTe category*."
     [:ko {:msg "`>>` nary operator needs at least 1 argument"
           :args fs}]))
 
-(latte/term [T1 :type] [T2 :type] [T3 :type] [T4 :type] [T5 :type]
-       [i (==> T4 T5)] [h (==> T3 T4)] [g (==> T2 T3)] [f (==> T1 T2)]
-       (>> f g h i))
+;; (latte/term [T1 :type] [T2 :type] [T3 :type] [T4 :type] [T5 :type]
+;;        [i (==> T4 T5)] [h (==> T3 T4)] [g (==> T2 T3)] [f (==> T1 T2)]
+;;        (>> f g h i))
 ;; => (compose i (compose h (compose g f)))
 
 ;; (latte/term [T :type] [U :type] [f (==> T U)] (>> f))
@@ -320,8 +320,7 @@ as objects and functions  as arrows in the so-called *LaTTe category*."
   "The inverse of bijective function `f`."
   [[?T ?U :type], f (==> T U), b (bijective f)]
   (lambda [y U]
-    (q/the (lambda [x T] (equal (f x) y))
-           ((bijective-unique f) b y))))
+    (q/the ((bijective-unique f) b y))))
 
 (defthm inverse-prop
   "The basic property of the inverse of a bijective function `f`."
@@ -331,8 +330,7 @@ as objects and functions  as arrows in the so-called *LaTTe category*."
 (proof 'inverse-prop-thm  
   (assume [y U]
     (have <a> (equal (f ((inverse f b) y)) y)
-          :by (q/the-prop (lambda [z T] (equal (f z) y))
-                          (((bijective-unique f) b) y))))
+          :by (q/the-prop (((bijective-unique f) b) y))))
   (qed <a>))
 
 (defthm inverse-prop-conv
