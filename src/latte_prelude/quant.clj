@@ -33,6 +33,16 @@ Remark: this is a second-order, intuitionistic definition that
     (==> (forall [x T] (==> (P x) α))
          α)))
 
+(defn decompose-ex-type [def-env ctx t]
+  (u/decomposer
+   (fn [t]
+     (if (clojure.core/and (seq t)
+                           (= (count t) 2)
+                           (= (first t) #'latte-prelude.quant/ex-def))
+       [(second t) (nth t 2)]
+       (throw (ex-info "Cannot infer an existential type" {:type t}))))
+   def-env ctx t))
+
 (defnotation exists
   "The existential quantification  `(exists [x T] P)`
  is a shortcut for `(ex (lambda [x T] P))`, corresponding

@@ -748,14 +748,15 @@ To prove a proposition `C` under the assumption  `(or A B)`:
 
 (defimplicit or-elim
   "An elimination rule that takes a proof
- `or-term` of type `(or A B)`, a proposition `prop`,
+ `or-term` of type `(or A B)`,
 a proof `left-proof` of type `(==> A prop)`, 
 a proof `right-proof` of type `(==> B prop)`, and thus
 concludes that `prop` holds by `[[or-elim-thm]]`.
 
 This is (for now) the easiest rule to use for proof-by-cases."
-  [def-env ctx [or-term or-type] [prop prop-type] [left-proof left-type] [right-proof right-type]]
-  (let [[A B] (decompose-or-type def-env ctx or-type)]
+  [def-env ctx [or-term or-type] [left-proof left-type] [right-proof right-type]]
+  (let [[A B] (decompose-or-type def-env ctx or-type)
+        [_ prop] (decompose-impl-type def-env ctx left-type)]
     [[[[(list #'or-elim-thm A B) or-term] prop] left-proof] right-proof]))
 
 (defnotation or*
@@ -843,19 +844,19 @@ Then `(or-intro* A1 ... p ... An)` is a proof of `(or* A1 ... Ai ... An)`."
 
 ;; or-elim* with n branches is a little bit trickier (and useful)
 
-(defn build-or-elim* [def-env ctx index or-term or-type goal-type case-proofs]
+(defn build-or-elim* [def-env ctx index or-term or-type case-proofs]
   (case (count case-proofs)
     (0 1) (throw (ex-info "Cannot build nary or-elim*: missing case proof(s)."
                           {:case-term or-term
                            :case-type or-type
                            :case-proofs case-proofs}))
-    2 (list #'or-elim or-term goal-type (first case-proofs) (second case-proofs))
+    2 (list #'or-elim or-term (first case-proofs) (second case-proofs))
     ;; more than 2
     (try (let [[L R] (decompose-or-type def-env ctx or-type)]
            (let [Hcase (gensym (str "Hcase" index))]
-             (list #'or-elim or-term goal-type (first case-proofs)
+             (list #'or-elim or-term (first case-proofs)
                    (list 'λ [Hcase R]
-                         (build-or-elim* def-env ctx (inc index) Hcase R goal-type (rest case-proofs))))))
+                         (build-or-elim* def-env ctx (inc index) Hcase R (rest case-proofs))))))
          (catch Exception _
            (throw (ex-info "Cannot build nary or-elim*: case term/type is not a disjunction"
                            {:case-term or-term
@@ -863,39 +864,38 @@ Then `(or-intro* A1 ... p ... An)` is a proof of `(or* A1 ... Ai ... An)`."
                             :case-proofs case-proofs}))))))
 
 ;; Hor :: (or A1 (or A2 ... (or An-1 An)))
-;; (or-elim* Hor T proof1 proof2 ... proofN-1 proofN)
-;; ≡ (or-elim Hor T
+;; (or-elim* Hor proof1 proof2 ... proofN-1 proofN)
+;; ≡ (or-elim Hor
 ;;            proof1
 ;;            (lambda [Hc1 (or A2 ... (or An-1 An))]
-;;               (or-elim Hc1 T
+;;               (or-elim Hc1
 ;;                        proof2
 ;;                        ...
 ;;                          proofN-2
 ;;                          (lambda [HcN (or An-1 An)]
-;;                            (or-elim HcN T proofN-1 proofN)))))
+;;                            (or-elim HcN proofN-1 proofN)))))
 
 
 (defimplicit* or-elim*
   "Elimination rule for n-ary disjunction `(or* T1 T2 ... TN)`.
 
 ```clojure
-(or-elim* or-term goal-type case1 case2 ... caseN)
+(or-elim* or-term case1 case2 ... caseN)
 ```
 is the same thing as the repeated and nested uses of `[[or-elim]]` for binary disjunction.
 "
   [def-env ctx & args]
   (when (empty? args)
     (throw (ex-info "Cannot build nary or-elim*: missing arguments" {:args args})))
-  (let [[[or-term or-type] & args] args]
-    (when (empty? args)
-      (throw (ex-info "Cannot build nary or-elim*: missing arguments such as goal type"
+  (let [[[or-term or-type] & cases] args]
+    (when (empty? cases)
+      (throw (ex-info "Cannot build nary or-elim*: missing arguments"
                       {:or-term or-term
                        :or-type or-type
-                       :args args})))
-    (let [[[goal-type _] & cases] args]
-      (let [elim-term (build-or-elim* def-env ctx 1 or-term or-type goal-type (map first cases))]
-        ;; (println "elim-term =" elim-term)
-        elim-term))))
+                       :args cases})))
+    (let [elim-term (build-or-elim* def-env ctx 1 or-term or-type (map first cases))]
+      ;; (println "elim-term =" elim-term)
+      elim-term)))
 
 ;; here's a three branches example :
 
@@ -916,10 +916,10 @@ is the same thing as the repeated and nested uses of `[[or-elim]]` for binary di
            proof1 (==> A D)
            proof2 (==> B D)
            proof3 (==> C D)]
-    (have <elim> D :by (or-elim Hor D
+    (have <elim> D :by (or-elim Hor
                                 proof1
                                 (lambda [Hc1 (or B C)]
-                                  (or-elim Hc1 D proof2 proof3)))))
+                                  (or-elim Hc1 proof2 proof3)))))
   (qed <elim>))
 
 (example [[A :type] [B :type] [C :type] [D :type]]
@@ -939,7 +939,7 @@ is the same thing as the repeated and nested uses of `[[or-elim]]` for binary di
            proof1 (==> A D)
            proof2 (==> B D)
            proof3 (==> C D)]
-    (have <elim> D :by (or-elim* Hor D proof1 proof2 proof3)))
+    (have <elim> D :by (or-elim* Hor proof1 proof2 proof3)))
   (qed <elim>))
 
 ;; four branches ?
@@ -964,13 +964,13 @@ is the same thing as the repeated and nested uses of `[[or-elim]]` for binary di
            proof2 (==> B E)
            proof3 (==> C E)
            proof4 (==> D E)]
-    (have <elim> E :by (or-elim Hor E
+    (have <elim> E :by (or-elim Hor
                                 proof1
                                 (lambda [Hc1 (or B (or C D))]
-                                  (or-elim Hc1 E
+                                  (or-elim Hc1
                                            proof2
                                            (lambda [Hc2 (or C D)]
-                                             (or-elim Hc2 E proof3 proof4)))))))
+                                             (or-elim Hc2 proof3 proof4)))))))
   (qed <elim>))
 
 (example [[A :type] [B :type] [C :type] [D :type] [E :type]]
@@ -993,7 +993,7 @@ is the same thing as the repeated and nested uses of `[[or-elim]]` for binary di
            proof2 (==> B E)
            proof3 (==> C E)
            proof4 (==> D E)]
-    (have <elim> E :by (or-elim* Hor E proof1 proof2 proof3 proof4)))
+    (have <elim> E :by (or-elim* Hor proof1 proof2 proof3 proof4)))
   (qed <elim>))
 
 (defthm or-not-elim-left
@@ -1091,15 +1091,13 @@ This eliminates to the right operand."
               :by (or-intro-right A <b1>)))
       (have <c> ;; _
         (or A (or B C))
-            :by (or-elim H2 (or A (or B C))
-                         <a> <b>)))
+            :by (or-elim H2 <a> <b>)))
     (assume [H5 C]
       (have <d1> (or B C)
             :by (or-intro-right B H5))
       (have <d> (or A (or B C))
             :by (or-intro-right A <d1>)))
-    (have <e> _ :by (or-elim H1 (or A (or B C))
-                             <c> <d>)))
+    (have <e> _ :by (or-elim H1 <c> <d>)))
   (qed <e>))
 
 
@@ -1125,11 +1123,9 @@ This eliminates to the right operand."
         (have <c> (or (or A B) C)
               :by (or-intro-right (or A B) H5)))
       (have <d> _
-            :by (or-elim H3 (or (or A B) C)
-                         <b> <c>)))
+            :by (or-elim H3 <b> <c>)))
     (have <e> _
-          :by (or-elim H1 (or (or A B) C)
-                       <a> <d>)))
+          :by (or-elim H1 <a> <d>)))
   (qed <e>))
 
 (defimplicit or-assoc
