@@ -11,11 +11,22 @@
   (:refer-clojure :exclude [and or not])
 
   (:require [latte.core :as latte :refer [definition defthm defaxiom defnotation defimplicit
-                                          proof qed assume have]]
+                                          example proof qed assume have]]
 
             [latte.utils :as u]
             [latte-prelude.prop :as p :refer [and]]
             [latte-prelude.equal :as eq :refer [equal equality]]))
+
+(defn decompose-forall-type [def-env ctx t]
+  (u/decomposer
+   (fn [t]
+     (if (clojure.core/and (seq t)
+                           (= (count t) 3)
+                           (= (first t) 'Π))
+       (let [[_ [x A] B] t]
+         [[x A] B])
+       (throw (ex-info "Cannot infer a universal quantification" {:type t}))))
+   def-env ctx t))
 
 (definition ex
   "The encoding for the existential quantifier.
@@ -37,7 +48,7 @@ Remark: this is a second-order, intuitionistic definition that
   (u/decomposer
    (fn [t]
      (if (clojure.core/and (seq t)
-                           (= (count t) 2)
+                           (= (count t) 3)
                            (= (first t) #'latte-prelude.quant/ex-def))
        [(second t) (nth t 2)]
        (throw (ex-info "Cannot infer an existential type" {:type t}))))
@@ -54,20 +65,39 @@ Remark: this is a second-order, intuitionistic definition that
 
 (alter-meta! #'exists update-in [:style/indent] (fn [_] [1 :form :form]))
 
-(defthm ex-elim
+(defthm ex-elim-rule
   "The (intuitionistic) elimination rule for the existential quantifier."
   [?T :type, P (==> T :type), A :type]
   (==> (ex P)
        (forall [x T] (==> (P x) A))
        A))
 
-(proof 'ex-elim-thm
+(proof 'ex-elim-rule-thm
   (assume [H1 (ex P)
            H2 (forall [x T] (==> (P x) A))]
     (have <a> (==> (forall [x T] (==> (P x) A))
                    A) :by (H1 A))
     (have <b> A :by (<a> H2)))
   (qed <b>))
+
+(defimplicit ex-elim
+  "An elimination rule written `(ex-elim ex-proof x-proof)` with:
+  - `ex-proof` of type `(ex P)` for some property `P` if type `(==> T :type)`, 
+  - `x-proof` a proof of `(forall [x T] (==> (P x) A))` for
+ some goal statement `A`. Thanks to [[ex-elim-rule]] the goal `A` is concluded."
+  [def-env ctx [ex-proof ex-proof-type] [x-proof x-proof-type]]
+  (let [[T P] (decompose-ex-type def-env ctx ex-proof-type)
+        [_ Q] (decompose-forall-type def-env ctx x-proof-type)
+        [_ A] (p/decompose-impl-type def-env ctx Q)]
+    [[(list #'ex-elim-rule-thm T P A) ex-proof] x-proof]))
+
+(example [[T :type] [A :type] [P (==> T :type)] [Hex (ex P)]]
+    (==> (forall [x T] (==> (P x) A))
+         A)
+  ;; proof
+  (assume [Hx (forall [x T] (==> (P x) A))]
+    (have <a> A :by (ex-elim Hex Hx)))
+  (qed <a>))
 
 (defthm ex-intro
   "The introduction rule for the existential quantifier."
