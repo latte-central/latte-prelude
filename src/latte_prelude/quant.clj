@@ -124,6 +124,16 @@ Remark: this is a second-order, intuitionistic definition that
          (P y)
          (equal x y))))
 
+(defn decompose-single-type [def-env ctx t]
+  (u/decomposer
+   (fn [t]
+     (if (clojure.core/and (seq t)
+                           (= (count t) 3)
+                           (= (first t) #'latte-prelude.quant/single-def))
+       [(second t) (nth t 2)]
+       (throw (ex-info "Cannot infer a \"single\" type" {:type t}))))
+   def-env ctx t))
+
 (defthm single-intro
   "Introduction rule for [[single]]."
   [?T :type, P (==> T :type)]
@@ -141,7 +151,7 @@ Remark: this is a second-order, intuitionistic definition that
     (have <a> (single P) :by H))
   (qed <a>))
 
-(defthm single-elim
+(defthm single-elim-rule
   "Elimination rule for [[single]]."
   [?T :type, P (==> T :type), x T, y T]
   (==> (single P)
@@ -149,12 +159,30 @@ Remark: this is a second-order, intuitionistic definition that
        (P y)
        (equal x y)))
 
-(proof 'single-elim-thm
+(proof 'single-elim-rule-thm
   (assume [H1 (single P)
            H2 (P x)
            H3 (P y)]
     (have <a> (equal x y)
           :by (H1 x y H2 H3)))
+  (qed <a>))
+
+(defimplicit single-elim
+  "Elimination rule for [[single]]. `(single-elim s-proof x y)`
+ such that the type of `s-proof` is `(single P)` for some property `P`, then
+ we have `(==> (P x) (P y) (equal x y))` thanks to `[[single-elim-rule]]`."
+  [def-env ctx [s-proof s-proof-type] [x x-type] [y y-type]]
+  (let [[T P] (decompose-single-type def-env ctx s-proof-type)]
+    [(list #'single-elim-rule-thm T P x y) s-proof]))
+
+(example [[T :type] [P (==> T :type)] [Hs (single P)] [x T] [y T]]
+    (==> (P x)
+         (P y)
+         (equal x y))
+  ;; proof
+  (assume [Hx (P x)
+           Hy (P y)]
+    (have <a> (equal x y) :by ((single-elim Hs x y) Hx Hy)))
   (qed <a>))
 
 (definition unique
@@ -208,7 +236,7 @@ This is the implicit version of the axiom [[the-ax]]."
   (assume [y T
            Hy (P y)]
     (have <c> (equal y (the P u)) 
-          :by ((single-elim P y (the P u)) <a> Hy <b>)))
+          :by ((single-elim <a> y (the P u)) Hy <b>)))
   (qed <c>))
 
 
