@@ -63,6 +63,14 @@
 (u/register-implicit-type-parameters-handler! '==> #'decompose-impl-type nil)
 
 (defimplicit impl-trans
+  "Implication is transitive.
+
+  `(impl-trans pAB pBC)` yields `(==> A C)`
+  from the proof `pAB` that `(==> A B)`
+  and the proof `pBC` that `(==> B C)`
+  
+  cf. [[impl-trans-thm]]
+"
   [def-env ctx [impl1 ty1] [impl2 ty2]]
   (let [[A B] (decompose-impl-type def-env ctx ty1)
         [B' C] (decompose-impl-type def-env ctx ty2)]
@@ -71,6 +79,8 @@
                                                      :left-rhs-type B
                                                      :right-lhs-type B'})))
     [[(list #'latte-prelude.prop/impl-trans-thm A B C) impl1] impl2]))
+
+(alter-meta! #'impl-trans update-in [:arglists] (fn [_] (list '[[?A ?B ?C :type] [pA (==> A B)] [pB (==> B C)]])))
 
 (definition absurd
   "Absurdity."
@@ -184,6 +194,7 @@ This is an implicit version of [[and-intro-thm]]."
   [def-env ctx [a ty-a] [b ty-b]]
   [[(list #'and-intro-thm ty-a ty-b) a] b])
 
+(alter-meta! #'and-intro update-in [:arglists] (fn [_] (list '[[?A ?B :type] [a A] [b B]])))
 
 (example [[A :type] [B :type] [x A] [y B]]
     (and A B)
@@ -225,12 +236,14 @@ This is an implicit version of [[and-intro-thm]]."
 
 (defimplicit and-elim-left
   "An implicit elimination rule that takes a proof
-of type `(and A B)` and yields a proof of `A`.
+ `p` of type `(and A B)` and yields a proof of `A`.
 
 This is an implicit version of [[and-elim-left-thm]]."
   [def-env ctx [and-term ty]]
   (let [[A B] (decompose-and-type def-env ctx ty)]
     [(list #'and-elim-left-thm A B) and-term]))
+
+(alter-meta! #'and-elim-left update-in [:arglists] (fn [_] (list '[[?A ?B :type] [p (and A B)]])))
 
 (defthm and-elim-right-thm
   "Elimination rule for logical conjunction.
@@ -250,12 +263,14 @@ This is an implicit version of [[and-elim-left-thm]]."
 
 (defimplicit and-elim-right
   "An implicit elimination rule that takes a proof
-`and-term` of type `(and A B)` and yields a proof of `B`.
+`p` of type `(and A B)` and yields a proof of `B`.
 
 This is an implicit version of [[and-elim-right-thm]]."
   [def-env ctx [and-term ty]]
   (let [[A B] (decompose-and-type def-env ctx ty)]
     [(list #'and-elim-right-thm A B) and-term]))
+
+(alter-meta! #'and-elim-right update-in [:arglists] (fn [_] (list '[[?A ?B :type] [p (and A B)]])))
 
 (defthm and-sym-thm
   "Symmetry of conjunction."
@@ -275,10 +290,15 @@ This is an implicit version of [[and-elim-right-thm]]."
   (qed <d>))
 
 (defimplicit and-sym
-  "Symmetry of conjunction, an implicit version of [[and-sym-]]."
+  "Symmetry of conjunction. 
+  Proves `(and B A)` from a proof `p` that `(and A B)`.
+
+This is an implicit version of [[and-sym-thm]]."
   [def-env ctx [and-term ty]]
   (let [[A B] (decompose-and-type def-env ctx ty)]
     [(list #'and-sym-thm A B) and-term]))
+
+(alter-meta! #'and-sym update-in [:arglists] (fn [_] (list '[[?A ?B :type] [p (and A B)]])))
 
 (defn mk-nary-op-right-leaning
   "A simple utility for creating \"right-leaning\" n-ary operator calls."
