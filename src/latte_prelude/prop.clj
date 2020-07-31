@@ -62,6 +62,14 @@
 ;; register implication as potential source of implicit type parameters
 (u/register-implicit-type-parameters-handler! '==> #'decompose-impl-type nil)
 
+(defn decompose-lambda-term [def-env ctx t]
+  (decomposer (fn [t] (match
+                       t
+                       (['λ [x A] B] :seq) [[x A] B]
+                       :else 
+                       (throw (ex-info "Not a lambda" {:term t}))))
+              def-env ctx t))
+
 (defimplicit impl-trans
   "Implication is transitive.
 
