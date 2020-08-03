@@ -255,14 +255,9 @@ Remark: this is a second-order, intuitionistic definition that
   (qed <c>))
 
 (defimplicit the-lemma
-  "`(the-elmma u)` proves that `(forall [y T] (==> (P y) (equal y (the u))))`
+  "`(the-lemma u)` proves that `(forall [y T] (==> (P y) (equal y (the u))))`
 from the proof `u` that `(unique P)` for some property `P`."
   [def-env ctx [u u-type]]
   (let [[exP _] (p/decompose-and-type def-env ctx u-type)
         [T P] (decompose-ex-type def-env ctx exP)]
     (list #'the-lemma-prop-thm T P u)))
-
-
-
-
-
