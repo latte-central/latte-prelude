@@ -401,5 +401,3 @@ as objects and functions  as arrows in the so-called *LaTTe category*."
                                (inverse-surjective f b)))
   (qed <a>))
 
-
-
