@@ -7,7 +7,10 @@
    [latte.utils :refer [decomposer set-opacity!]]
    [latte.core :as latte :refer [definition defthm defimplicit defimplicit*
                                           assume have qed proof]]
-   [latte-prelude.prop :as p :refer [<=> and or not]]))
+
+   [latte-prelude.utils :as pu]
+   [latte-prelude.prop :as p :refer [<=> and or not]])
+)
 
 (definition equality
   "The intuitionistic, second-order definition of equality.
@@ -200,12 +203,24 @@ etc.
   "
 Proves `(P y)` given the fact that `(equal x y)` and `(P x)`
 
-This is thanks to substitutivity of `equal`, cf. [[eq-subst-impl]]."
+This is thanks to substitutivity of `equal`, cf. [[eq-subst-prop]]."
   [def-env ctx [P P-type] [eq-term eq-type] [Px Px-type]]
   (let [[T x y] (decompose-equal-type def-env ctx eq-type)]
     [[(list #'eq-subst-prop-thm T P x y) eq-term] Px]))
 
 (alter-meta! #'eq-subst update-in [:arglists] (fn [_] (list '[[P (==> T :type)] [eq (equal x y)] [Px (P x)]])))
+
+(defimplicit subst
+  "Proves `(P y)` from proofs of `(P x)` and `(equal x y)`.
+The difference with [[eq-subst]] is that we try to
+infer the property `P`."
+  [def-env ctx [Px Px-type] [eq-xy eq-xy-type]]
+  (let [[T x y] (decompose-equal-type def-env ctx eq-xy-type)]
+    (if-let [path (pu/find-term x Px-type)]
+      (let [P (pu/build-subst-lambda Px-type T path true)]
+        [[(list #'eq-subst-prop-thm T P x y) eq-xy] Px])
+      (throw (ex-info "Cannot infer substitution." {:term Px-type
+                                                   :subterm x})))))
 
 (defthm eq-cong-prop
   "Congruence property of equality."
