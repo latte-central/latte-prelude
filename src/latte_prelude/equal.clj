@@ -216,11 +216,14 @@ The difference with [[eq-subst]] is that we try to
 infer the property `P`."
   [def-env ctx [Px Px-type] [eq-xy eq-xy-type]]
   (let [[T x y] (decompose-equal-type def-env ctx eq-xy-type)]
+    ;; (println "find: " x)
+    ;; (println "  in: " Px-type)
     (if-let [path (pu/find-term x Px-type)]
-      (let [P (pu/build-subst-lambda Px-type T path true)]
-        [[(list #'eq-subst-prop-thm T P x y) eq-xy] Px])
+      (do ;; (println "path = " path)
+          (let [P (pu/build-subst-lambda Px-type T path true)]
+            [[(list #'eq-subst-prop-thm T P x y) eq-xy] Px]))
       (throw (ex-info "Cannot infer substitution." {:term Px-type
-                                                   :subterm x})))))
+                                                    :subterm x})))))
 
 (defthm eq-cong-prop
   "Congruence property of equality."

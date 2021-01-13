@@ -55,6 +55,10 @@
   (is (= (find-term (parse '(lambda [x T] x))
                     (parse '(lambda [f (==> T T T)] [f (lambda [z T] x)])))
          false))
+
+  (is (= (find-term (parse 'x)
+                    (parse (list #'latte-prelude.equal/equal '(f x) '(f x))))
+         [1 1]))
      
   )
 
@@ -72,6 +76,9 @@
                              (parse '(==> T T)) [2 1] false)
          '(λ [$ (Π [⇧ T] T)] (λ [f (Π [⇧ T] (Π [⇧ T] T))] [f $]))))
          
+  (is (= (build-subst-lambda (parse (list #'latte-prelude.equal/equal '(f x) '(f x))) 'T [1 1] false)
+         (list 'λ ['$ 'T] (list #'latte-prelude.equal/equal '[f $] '[f x]))))
+
   )
 
 ;; XXX: why `example` cannot by used in a `deftest`
@@ -88,6 +95,19 @@
            (have <a> _ :by (latte-prelude.equal/eq-subst (lambda [$ T]
                                                 (latte-prelude.equal/equal (f x) (f $)))
                                         Heq (latte-prelude.equal/eq-refl (f x)))))
+         (qed <a>))
+
+       [:checked :example]))
+
+(is (=
+
+       (example [[T :type] [U :type] [x T] [y T] [f (==> T U)]]
+           (==> (equal x y)
+                (equal (f y) (f x)))
+         ;; proof
+         (assume [Heq _]
+           (have <a> _ :by (latte-prelude.equal/subst (latte-prelude.equal/eq-refl (f x)) 
+                                                      Heq)))
          (qed <a>))
 
        [:checked :example]))

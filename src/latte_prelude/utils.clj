@@ -76,10 +76,10 @@ substituted term."
     (stx/ref? u)
     (let [[dname & args] u
           vargs (vec args)
-          before-args (subvec 0 (dec (first path)))
-          after-args (subvec (inc (first path)))]
-      (list dname (concat before-args
-                          (body-build tvar (rest path) (nth vargs (first path)))
+          before-args (subvec vargs 0 (dec (first path)))
+          after-args (subvec vargs (first path))]
+      (cons dname (concat before-args
+                          (list (body-build tvar (rest path) (nth vargs (first path))))
                           after-args)))
 
     :else u))
