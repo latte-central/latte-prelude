@@ -5,7 +5,7 @@
             [latte-kernel.defenv :as defenv]
             [latte.core :as latte :refer [example assume have qed]]
 
-            [latte-prelude.utils :refer [find-term]]
+            [latte-prelude.utils :refer [find-term build-subst-lambda]]
             [latte-prelude.equal :as eq :refer [equal]])
   )
 
@@ -30,16 +30,49 @@
                     (parse '(lambda [y T] y)))
          false))
 
+  (is (= (find-term (parse 'T)
+                    (parse '(lambda [y T] x)))
+         [1]))
+
   (is (= (find-term (parse 'x)
                     (parse '(lambda [y T] x)))
          [2]))
 
-  ;; XXX: the following is strange, because there's a name
-  ;; capture, however we'll progress one step at a time
+  ;; A special case, if we are looking for a variable
+  ;; that gets bound in the term u (arguably rare case)
   (is (= (find-term (parse 'x)
                     (parse '(lambda [x T] x)))
-         [2]))
-)
+         false))
+
+  (is (= (find-term (parse '(lambda [x T] x))
+                    (parse '(lambda [f (==> T T T)] [f (lambda [x T] x)])))
+         [2 1]))
+
+  (is (= (find-term (parse '(lambda [x T] x))
+                    (parse '(lambda [f (==> T T T)] [f (lambda [z T] z)])))
+         [2 1]))
+
+  (is (= (find-term (parse '(lambda [x T] x))
+                    (parse '(lambda [f (==> T T T)] [f (lambda [z T] x)])))
+         false))
+     
+  )
+
+(deftest test-build-subst-subst-lambda-simple
+  (is (= (build-subst-lambda (parse 'x) 'T [] false)
+         '(λ [$ T] $)))
+
+  (is (= (build-subst-lambda (parse '(lambda [y T] x)) 'T [1] false)
+         '(λ [$ T] (λ [y $] x))))
+  
+  (is (= (build-subst-lambda (parse '(lambda [y T] x)) 'T [2] false)
+         '(λ [$ T] (λ [y T] $))))
+
+  (is (= (build-subst-lambda (parse '(lambda [f (==> T T T)] [f (lambda [x T] x)]))
+                             (parse '(==> T T)) [2 1] false)
+         '(λ [$ (Π [⇧ T] T)] (λ [f (Π [⇧ T] (Π [⇧ T] T))] [f $]))))
+         
+  )
 
 ;; XXX: why `example` cannot by used in a `deftest` ?
 ;; (deftest test-subst-ex1
