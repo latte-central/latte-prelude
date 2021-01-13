@@ -74,23 +74,21 @@
          
   )
 
-;; XXX: why `example` cannot by used in a `deftest` ?
-;; (deftest test-subst-ex1
+;; XXX: why `example` cannot by used in a `deftest`
+;; if the full namespace is not given ?
+(deftest test-subst-ex1
 
-;;   (is (=
+  (is (=
 
-;;        (example [[T :type] [U :type] [x T] [y T] [f (==> T U)]]
-;;            (==> (equal x y)
-;;                 (equal (f x) (f y)))
-;;          ;; proof
-;;          (assume [Heq _]
-;;            (have <a> _ :by (eq/eq-subst (lambda [$ T]
-;;                                                 (equal (f x) (f $)))
-;;                                         Heq (eq/eq-refl (f x)))))
-;;          (qed <a>))
+       (example [[T :type] [U :type] [x T] [y T] [f (==> T U)]]
+           (==> (equal x y)
+                (equal (f x) (f y)))
+         ;; proof
+         (assume [Heq _]
+           (have <a> _ :by (latte-prelude.equal/eq-subst (lambda [$ T]
+                                                (latte-prelude.equal/equal (f x) (f $)))
+                                        Heq (latte-prelude.equal/eq-refl (f x)))))
+         (qed <a>))
 
-;;        [:checked :example]))
-;; )
-           
-
-
+       [:checked :example]))
+)
