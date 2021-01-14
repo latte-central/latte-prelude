@@ -4,6 +4,8 @@
   (:refer-clojure :exclude [and or not])
 
   (:require
+   [latte-kernel.norm :as norm]
+
    [latte.utils :refer [decomposer set-opacity!]]
    [latte.core :as latte :refer [definition defthm defimplicit defimplicit*
                                           assume have qed proof]]
@@ -219,9 +221,17 @@ This is thanks to substitutivity of `equal`, cf. [[eq-subst-prop]]."
       (let [P (pu/build-subst-lambda Px-type T path true)]
         [[(list #'eq-subst-prop-thm T P x y) eq-xy] Px])
       ;; lhs `x` not found
-      (throw (ex-info "Cannot rewrite." {:term Px-type
-                                         :rewrite eq-xy-type
-                                         :not-found x})))))
+      ;; second try : after normalization (slower)
+      (let [x' (norm/normalize def-env ctx x)
+            Px-type' (norm/normalize def-env ctx Px-type)
+            [ok path] (pu/find-term x' Px-type' n)]
+        (if (= ok :ok)
+          (let [P (pu/build-subst-lambda Px-type' T path true)]
+            [[(list #'eq-subst-prop-thm T P x y) eq-xy] Px])
+          ;; really not found
+          (throw (ex-info "Cannot rewrite." {:term Px-type
+                                             :rewrite eq-xy-type
+                                             :not-found x})))))))
 (defimplicit rewrite
   "Proves `(P y)` from proofs of `(P x)` and `(equal x y)`.
 The difference with [[eq-subst]] is that we try to
