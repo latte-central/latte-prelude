@@ -1,4 +1,4 @@
-(defproject latte-prelude "1.0b9-SNAPSHOT"
+(defproject latte-prelude "1.0b10-SNAPSHOT"
   :description "The core library for the LaTTe proof assistant."
   :url "https://github.com/fredokun/latte-prelude.git"
   :license {:name "MIT Licence"
