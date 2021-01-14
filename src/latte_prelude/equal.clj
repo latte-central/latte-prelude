@@ -7,7 +7,10 @@
    [latte.utils :refer [decomposer set-opacity!]]
    [latte.core :as latte :refer [definition defthm defimplicit defimplicit*
                                           assume have qed proof]]
-   [latte-prelude.prop :as p :refer [<=> and or not]]))
+
+   [latte-prelude.utils :as pu]
+   [latte-prelude.prop :as p :refer [<=> and or not]])
+)
 
 (definition equality
   "The intuitionistic, second-order definition of equality.
@@ -200,12 +203,52 @@ etc.
   "
 Proves `(P y)` given the fact that `(equal x y)` and `(P x)`
 
-This is thanks to substitutivity of `equal`, cf. [[eq-subst-impl]]."
+This is thanks to substitutivity of `equal`, cf. [[eq-subst-prop]]."
   [def-env ctx [P P-type] [eq-term eq-type] [Px Px-type]]
   (let [[T x y] (decompose-equal-type def-env ctx eq-type)]
     [[(list #'eq-subst-prop-thm T P x y) eq-term] Px]))
 
 (alter-meta! #'eq-subst update-in [:arglists] (fn [_] (list '[[P (==> T :type)] [eq (equal x y)] [Px (P x)]])))
+
+(defn nrewrite-impl
+  "Core implementation of rewriting."
+  [def-env ctx n [Px Px-type] [eq-xy eq-xy-type]]
+  (let [[T x y] (decompose-equal-type def-env ctx eq-xy-type)
+        [ok path] (pu/find-term x Px-type n)] 
+    (if (= ok :ok)
+      (let [P (pu/build-subst-lambda Px-type T path true)]
+        [[(list #'eq-subst-prop-thm T P x y) eq-xy] Px])
+      ;; lhs `x` not found
+      (throw (ex-info "Cannot rewrite." {:term Px-type
+                                         :rewrite eq-xy-type
+                                         :not-found x})))))
+(defimplicit rewrite
+  "Proves `(P y)` from proofs of `(P x)` and `(equal x y)`.
+The difference with [[eq-subst]] is that we try to
+infer the property `P`. 
+
+This method rewrites the first occurrence
+ of (type type of) `x` in `P`  (in prefix ordering)."
+  [def-env ctx [Px Px-type] [eq-xy eq-xy-type]]
+  (nrewrite-impl def-env ctx 1 [Px Px-type] [eq-xy eq-xy-type]))
+
+(alter-meta! #'rewrite update-in [:arglists] (fn [_] (list '[[Px (P x)] [eq (equal x y)]])))
+
+(defimplicit nrewrite
+  "Proves `(P y)` from proofs of `(P x)` and `(equal x y)`.
+The difference with [[eq-subst]] is that we try to
+infer the property `P`. 
+
+This method rewrites the `n-th` occurrence
+ of (type type of) `x` in `P`  (in prefix ordering), starting from 1.
+
+The method `(rewrite <Px> <eq-xy>)` is the same as (and is preferable to)
+`(nrewrite 1 <Px> <eq-xy>)`"
+  [def-env ctx n-th [Px Px-type] [eq-xy eq-xy-type]]
+  (nrewrite-impl def-env ctx n-th [Px Px-type] [eq-xy eq-xy-type]))
+
+(alter-meta! #'nrewrite update-in [:arglists] (fn [_] (list '[n-th [Px (P x)] [eq (equal x y)]])))
+
 
 (defthm eq-cong-prop
   "Congruence property of equality."
