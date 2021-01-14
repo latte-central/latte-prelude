@@ -3,44 +3,54 @@
 )
 
 (defn find-term
-  "Finds term `t` within term `u` recursively, constructing
+  "Finds the `n-th` occurrence of term `t` within term `u` recursively, constructing
   the `path` to the first occurrence. The lookup is simply wrt.
   structural equality."
-  ([t u] (find-term t u [] #{}))
 
-  ([t u path bound]
+  ([t u] (find-term t u 1))
+
+  ([t u n-th] (find-term t u [] n-th (stx/free-vars t)))
+
+  ([t u path n-th free]
    (cond
-     ;; first, we try with structural equality
-     (and (not (bound t))
-          (= t u)) 
-     path
-
-     ;; let's try with alpha-norm
-     (and (not (bound t))
-          (stx/alpha-eq? t u))
-     path
+     ;; found an occurrence ?
+     (or (= t u) ;; structural equality
+         (stx/alpha-eq? t u)  ;; alpha-convertibility
+         )
+     (if (= n-th 1)
+       [:ok path]
+       ;; not the seeked occurrence
+       [:ko (dec n-th)])
 
      (stx/binder? u)
      (let [[_ [x ty] body] u]
-       (or (find-term t ty (conj path 1) bound)
-           (find-term t body (conj path 2) (conj bound x))))
+       (if (free x) ;; cannot equate a bound variable
+         [:ko n-th]
+         (let [[ok res] (find-term t ty (conj path 1) n-th free)]
+           (if (= ok :ok)
+             [ok res]
+             (find-term t body (conj path 2) res free)))))
 
      (stx/app? u)
      (let [[u1 u2] u]
-       (or (find-term t u1 (conj path 0) bound)
-           (find-term t u2 (conj path 1) bound)))
+       (let [[ok res] (find-term t u1 (conj path 0) n-th free)]
+         (if (= ok :ok)
+           [ok res]
+           (find-term t u2 (conj path 1) res free))))
 
      (stx/ref? u)
      (let [nbargs (dec (count u))]
-       (loop [k 1]
+       (loop [k 1, n-th n-th]
          (if (<= k nbargs)
-           (or (find-term t (nth u k) (conj path k) bound)
-               (recur (inc k)))
-           false)))
+           (let [[ok res] (find-term t (nth u k) (conj path k) n-th free)]
+             (if (= ok :ok)
+               [ok res]
+               (recur (inc k) res)))
+           [:ko n-th])))
 
      
      ;; all the other cases fail
-     :else false)))
+     :else [:ko n-th])))
 
 (declare body-build)
 
@@ -79,7 +89,7 @@ substituted term."
           before-args (subvec vargs 0 (dec (first path)))
           after-args (subvec vargs (first path))]
       (cons dname (concat before-args
-                          (list (body-build tvar (rest path) (nth vargs (first path))))
+                          (list (body-build tvar (rest path) (nth vargs (dec (first path)))))
                           after-args)))
 
     :else u))
