@@ -362,12 +362,9 @@ as objects and functions  as arrows in the so-called *LaTTe category*."
     (have <b> (equal (f (inv-f y)) (f x))
           :by ((inverse-prop f b) (f x)))
     (have <c> (equal (inv-f y) x) :by (<a> (inv-f y) x <b>))
-    (have <d> (exists [z U] (equal (inv-f z) x))
-          :by ;; ((q/ex-intro (lambda [z U] (equal (inv-f z) x)) y)
-              ;;  <c>)
-          ((q/ex-intro-rule (λ [y U] (equal ((inv-f) y) x)) y) <c>)
-          ;;(q/ex-intro y <c>)
-          ))
+    (have <d> (exists [y U] (equal (inv-f y) x))
+          :by ((q/ex-intro (lambda [z U] (equal (inv-f z) x)) y)
+               <c>)))
   (qed <d>))
 
 (defthm inverse-injective

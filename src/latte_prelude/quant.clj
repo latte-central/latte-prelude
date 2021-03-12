@@ -99,13 +99,13 @@ Remark: this is a second-order, intuitionistic definition that
     (have <a> A :by (ex-elim Hex Hx)))
   (qed <a>))
 
-(defthm ex-intro-rule
+(defthm ex-intro
   "The introduction rule for the existential quantifier."
   [?T :type, P (==> T :type), x T]
   (==> (P x)
        (ex P)))
 
-(proof 'ex-intro-rule-thm
+(proof 'ex-intro-thm
   (assume [H (P x)
            A :type
            y (forall [z T] (==> (P z) A))]
@@ -115,16 +115,6 @@ Remark: this is a second-order, intuitionistic definition that
 
 ;; ex is made opaque
 (u/set-opacity! #'ex-def true)
-
-(defimplicit ex-intro
-  "Introduction of an existential quantifier.
-  `(ex-intro x (P x))` introduces a proof or `(ex P)`.
-
-Note that `x` must occur free in `(P x)`."
-  [def-env ctx [x x-ty] [Px Px-ty]]
-  (let [prop [(list #'ex-intro-rule (list 'λ [x x-ty] Px-ty) x) Px]]
-    ;;[(list #'ex-intro-rule (list 'λ [x x-ty] Px-ty) x) Px])
-    prop))
 
 (definition single
   "The constraint that \"there exists at most\"..."
