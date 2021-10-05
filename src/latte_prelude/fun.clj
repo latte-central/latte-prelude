@@ -322,6 +322,12 @@ as objects and functions  as arrows in the so-called *LaTTe category*."
   (lambda [y U]
     (q/the ((bijective-unique f) b y))))
 
+;; Note: there's some redundancy here since we could extract
+;; the function `f` from the type `(bijective f)`, and hence create
+;; a defimplicit such that `(inverse f b)` could be written `(inverse b)`
+;; However, it seems that explicitely mentioning the function `f`  (often 
+;; a single letter function name) provides better readability.
+
 (defthm inverse-prop
   "The basic property of the inverse of a bijective function `f`."
   [[?T ?U :type], f (==> T U), b (bijective f)]
