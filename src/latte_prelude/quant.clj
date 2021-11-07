@@ -14,8 +14,9 @@
                                           example proof qed assume have]]
 
             [latte.utils :as u]
-            [latte-prelude.prop :as p :refer [and]]
-            [latte-prelude.equal :as eq :refer [equal equality]]))
+            [latte-prelude.prop :as p :refer [and or not]]
+            [latte-prelude.equal :as eq :refer [equal equality]]
+            [latte-prelude.classic :as classic]))
 
 (defn decompose-forall-type [def-env ctx t]
   (u/decomposer
@@ -111,6 +112,41 @@ Remark: this is a second-order, intuitionistic definition that
            y (forall [z T] (==> (P z) A))]
     (have <a> (==> (P x) A) :by (y x))
     (have <b> A :by (<a> H)))
+  (qed <b>))
+
+
+(defthm not-ex-elim
+  "The classical (i.e. non-intuitionistic) elimination rule for negation of existence."
+  [?T :type, P (==> T :type)]
+  (==> (not (ex P))
+       (forall [x T] (not (P x)))))
+
+(proof 'not-ex-elim-thm
+  (assume [Hnex (not (ex P))]
+    (assume [x T]
+      (assume [Hyes (P x)]
+        (have <a1> (ex P) :by ((ex-intro P x) Hyes))
+        (have <a2> p/absurd :by (Hnex <a1>))
+        (have <a> (not (P x)) :by (<a2> (not (P x)))))
+      (assume [Hno (not (P x))]
+        (have <b> (not (P x)) :by Hno))
+      (have <c> (or (P x) (not (P x)))
+            :by (classic/excluded-middle-ax (P x)))
+      (have <d> (not (P x)) :by (p/or-elim <c> <a> <b>))))
+  (qed <d>))
+
+(defthm not-ex-intro
+  "The introduction rule for negation of existence."
+  [?T :type, P (==> T :type)]
+  (==> (forall [x T] (not (P x)))
+       (not (ex P))))
+
+(proof 'not-ex-intro-thm
+  (assume [H (forall [x T] (not (P x)))]
+    (assume [Hcontra (ex P)]
+      (assume [x T Hx (P x)]
+        (have <a> p/absurd :by (H x Hx)))
+      (have <b> p/absurd :by (ex-elim Hcontra <a>))))
   (qed <b>))
 
 ;; ex is made opaque

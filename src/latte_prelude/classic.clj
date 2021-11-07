@@ -81,4 +81,3 @@ classical logic."
       (have <d> p/absurd :by (<b> <c>)))
     (have <e> (or A B) :by ((not-not-impl (or A B)) <d>)))
   (qed <e>))
-
