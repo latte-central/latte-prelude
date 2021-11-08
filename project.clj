@@ -16,7 +16,7 @@
                        latte-prelude.classic
                        latte-prelude.fun]}
   :profiles {:uberjar {:aot [latte-prelude.main]}}
-  :plugins [[lein-codox "0.10.7"]])
+  :plugins [[lein-codox "0.10.8"]])
 
 
 

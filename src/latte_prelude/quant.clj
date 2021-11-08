@@ -11,7 +11,7 @@
   (:refer-clojure :exclude [and or not])
 
   (:require [latte.core :as latte :refer [definition defthm defaxiom defnotation defimplicit
-                                          example proof qed assume have]]
+                                          example proof try-proof qed assume have]]
 
             [latte.utils :as u]
             [latte-prelude.prop :as p :refer [and or not]]
@@ -114,9 +114,24 @@ Remark: this is a second-order, intuitionistic definition that
     (have <b> A :by (<a> H)))
   (qed <b>))
 
+(defthm ex-impl
+  "Use of implication in existentials."
+  [[?T :type] [P Q (==> T :type)]]
+  (==> (ex P)
+       (forall [x T] (==> (P x) (Q x)))
+       (ex Q)))
+
+(proof 'ex-impl-thm
+  (assume [HP _
+           Himpl _]
+    (assume [x T Hx (P x)]
+      (have <a> (Q x) :by (Himpl x Hx))
+      (have <b> (ex Q) :by ((ex-intro Q x) <a>)))
+    (have <c> (ex Q) :by (ex-elim HP <b>)))
+  (qed <c>))
 
 (defthm not-ex-elim
-  "The classical (i.e. non-intuitionistic) elimination rule for negation of existence."
+  "The classical elimination rule for negation of existence."
   [?T :type, P (==> T :type)]
   (==> (not (ex P))
        (forall [x T] (not (P x)))))
@@ -126,14 +141,8 @@ Remark: this is a second-order, intuitionistic definition that
     (assume [x T]
       (assume [Hyes (P x)]
         (have <a1> (ex P) :by ((ex-intro P x) Hyes))
-        (have <a2> p/absurd :by (Hnex <a1>))
-        (have <a> (not (P x)) :by (<a2> (not (P x)))))
-      (assume [Hno (not (P x))]
-        (have <b> (not (P x)) :by Hno))
-      (have <c> (or (P x) (not (P x)))
-            :by (classic/excluded-middle-ax (P x)))
-      (have <d> (not (P x)) :by (p/or-elim <c> <a> <b>))))
-  (qed <d>))
+        (have <a> p/absurd :by (Hnex <a1>)))))
+  (qed <a>))
 
 (defthm not-ex-intro
   "The introduction rule for negation of existence."
@@ -148,6 +157,27 @@ Remark: this is a second-order, intuitionistic definition that
         (have <a> p/absurd :by (H x Hx)))
       (have <b> p/absurd :by (ex-elim Hcontra <a>))))
   (qed <b>))
+
+(defthm not-not-elim
+  "A classical (i.e. non-intuitionistic) elimination rule for double existential negation."
+  [?T :type, P (==> T :type)]
+  (==> (not (exists [x T] (not (P x))))
+       (forall [x T] (P x))))
+
+(proof 'not-not-elim-thm
+  (assume [Hnex _]
+    (assume [x T]
+      (assume [Hyes (P x)]
+        (have <a> (P x) :by Hyes))
+      (assume [Hno (not (P x))]
+        (have <b1> (exists [x T] (not (P x)))
+              :by ((ex-intro (lambda [y T] (not (P y))) x) Hno))
+        (have <b2> p/absurd :by (Hnex <b1>))
+        (have <b> (P x) :by (<b2> (P x))))
+      (have <c> (or (P x) (not (P x)))
+            :by (classic/excluded-middle-ax (P x)))
+      (have <d> (P x) :by (p/or-elim <c> <a> <b>))))
+  (qed <d>))
 
 ;; ex is made opaque
 (u/set-opacity! #'ex-def true)
