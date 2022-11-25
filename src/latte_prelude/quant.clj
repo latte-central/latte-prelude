@@ -16,7 +16,8 @@
             [latte.utils :as u]
             [latte-prelude.prop :as p :refer [and or not]]
             [latte-prelude.equal :as eq :refer [equal equality]]
-            [latte-prelude.classic :as classic]))
+            [latte-prelude.classic :as classic]
+            [latte.search :as search]))
 
 (defn decompose-forall-type [def-env ctx t]
   (u/decomposer
@@ -327,3 +328,7 @@ from the proof `u` that `(unique P)` for some property `P`."
   (let [[exP _] (p/decompose-and-type def-env ctx u-type)
         [T P] (decompose-ex-type def-env ctx exP)]
     (list #'the-lemma-prop-thm T P u)))
+
+;; register for search facility
+(search/register-search-namespace! 'latte-prelude.quant)
+

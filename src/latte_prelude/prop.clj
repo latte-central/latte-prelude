@@ -13,7 +13,8 @@
              :as latte
              :refer [defthm defimplicit defimplicit*
                      definition example try-example defnotation
-                     lambda forall proof assume have qed]]))
+                     lambda forall proof assume have qed]]
+            [latte.search :as search]))
 
 (defthm impl-refl
   "Implication is reflexive."
@@ -1322,3 +1323,6 @@ This eliminates to the right operand."
 (set-opacity! #'or true)
 (set-opacity! #'and true)
 ;;(set-opacity! #'<=> true)
+
+;; register for search facility
+(search/register-search-namespace! 'latte-prelude.prop)

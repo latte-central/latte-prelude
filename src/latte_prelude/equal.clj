@@ -11,7 +11,8 @@
                                           assume have qed proof]]
 
    [latte-prelude.utils :as pu]
-   [latte-prelude.prop :as p :refer [<=> and or not]])
+   [latte-prelude.prop :as p :refer [<=> and or not]]
+   [latte.search :as search])
 )
 
 (definition equality
@@ -293,3 +294,5 @@ Proves `(equal (f x) (f y))` by congruence of `equal`, cf. [[eq-cong-prop]]."
 (set-opacity! #'equality true)
 
 
+;; register for search facility
+(search/register-search-namespace! 'latte-prelude.equal)
