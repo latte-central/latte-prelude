@@ -251,7 +251,7 @@ The difference with [[eq-subst]] is that we try to
 infer the property `P`. 
 
 This method rewrites the `n-th` occurrence
- of (type type of) `x` in `P`  (in prefix ordering), starting from 1.
+ of (the type of) `x` in `P`  (in prefix ordering), starting from 1.
 
 The method `(rewrite <Px> <eq-xy>)` is the same as (and is preferable to)
 `(nrewrite 1 <Px> <eq-xy>)`"
@@ -282,7 +282,8 @@ The method `(rewrite <Px> <eq-xy>)` is the same as (and is preferable to)
 
 (defimplicit eq-cong
   "
-Proves `(equal (f x) (f y))` by congruence of `equal`, cf. [[eq-cong-prop]]."
+Proves `(equal (f x) (f y))` from a proof `eq-term` of `(equal x y)`,
+ i.e. by congruence, cf. [[eq-cong-prop]]."
   [def-env ctx [f f-ty] [eq-term eq-ty]]
   (let [[T x y] (decompose-equal-type def-env ctx eq-ty)
         [T' U] (p/decompose-impl-type def-env ctx f-ty)]
