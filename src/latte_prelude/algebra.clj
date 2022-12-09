@@ -22,8 +22,8 @@
 This makes the type `T` associated to the law a *semigroup*."
   [[?T :type] [⋅ (==> T T T)]]
   (∀ [x y z T]
-     (equal (⋅ (⋅ x y) z)
-            (⋅ x (⋅ y z)))))
+     (equal (⋅ x (⋅ y z))
+            (⋅ (⋅ x y) z))))
 
 (definition identity-left
   "The property of an element `e` to be a left-identity of a law `⋅`."
