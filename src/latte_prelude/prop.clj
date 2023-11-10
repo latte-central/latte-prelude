@@ -223,23 +223,31 @@ This is an implicit version of [[and-intro-thm]]."
     (have <c> A :by (<a> <b>)))
   (qed <c>))
 
-(defn decompose-and-type [def-env ctx t]
-  (decomposer
-   (fn [t]
-     (if (clojure.core/and (seq? t) 
-                           (= (count t) 3)
-                           (= (first t) #'latte-prelude.prop/and))
-       [(second t) (nth t 2)]
-       (match t
-              ([Π [C ✳]
-                (['Π [_ (['Π [_ A] (['Π [_ B] C'] :seq)] :seq)] C''] :seq)] :seq)
-              (if (= C C' C'')
-                [A B]
-                (throw (ex-info "Not a conjunction type: mismatch variables" {:type t
-                                                                              :vars [C C' C'']})))
-              :else 
-              (throw (ex-info "Not a conjunction type" {:type t})))))
-   def-env ctx t))
+(defn decompose-and-type
+  ([def-env ctx t] (decompose-and-type def-env ctx t false)) 
+  ([def-env ctx t def-only?]
+   (decomposer
+    (fn [t]
+      (cond
+        ;; definitional and
+        (clojure.core/and (seq? t) 
+                          (= (count t) 3)
+                          (= (first t) #'latte-prelude.prop/and))
+        [(second t) (nth t 2)]
+        
+        def-only? (throw (ex-info "Not a definitional conjunction type" {:type t}))
+
+        :else
+        (match t
+               ([Π [C ✳]
+                 (['Π [_ (['Π [_ A] (['Π [_ B] C'] :seq)] :seq)] C''] :seq)] :seq)
+               (if (= C C' C'')
+                 [A B]
+                 (throw (ex-info "Not a conjunction type: mismatch variables" {:type t
+                                                                               :vars [C C' C'']})))
+               :else 
+               (throw (ex-info "Not a conjunction type" {:type t})))))
+    def-env ctx t)))
 
 ;; (decompose-and-type latte-kernel.defenv/empty-env [] '(Π [C ✳] (Π [⇧ (Π [⇧ A] (Π [⇧ B] C))] C)))
 
@@ -488,7 +496,7 @@ Remark: the default \"left-leaning\" varient is [[and-intro*]]."
 
 
 (defn and*-arity [def-env ctx and-type]
-  (let [res (try (decompose-and-type def-env ctx and-type)
+  (let [res (try (decompose-and-type def-env ctx and-type true)
                  (catch Exception e nil))]
     (if (nil? res)
       1
