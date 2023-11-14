@@ -706,8 +706,10 @@ This is the introduction by the left operand."
   (qed <a>))
 
 (defimplicit or-intro-left
-  "Left introduction for a disjunction `(or A B)`, with `proofA` a proof of `A`.
- This is an implicit version of [[or-intro-left-thm]]."
+  "`(or-intro-left proofA B)` is left introduction for a disjunction `(or A B)`, 
+with `proofA` a proof of `A`.
+ 
+This is an implicit version of [[or-intro-left-thm]]."
   [def-env ctx [proofA A] [B kindB]]
   [(list #'or-intro-left-thm A B) proofA])
 
@@ -727,7 +729,9 @@ This is the introduction by the right operand."
   (qed <a>))
 
 (defimplicit or-intro-right
-  "Right introduction for a disjunction `(or A B)`, with `proofB` a proof of `B`.
+  "`(or-intro-left A proofB)` is right introduction for a disjunction `(or A B)`, 
+with `proofB` a proof of `B`.
+
  This is an implicit version of [[or-intro-left-thm]]."
   [def-env ctx [A kindA] [proofB B]]
   [(list #'or-intro-right-thm A B) proofB])
@@ -784,8 +788,8 @@ To prove a proposition `C` under the assumption  `(or A B)`:
 ;; (decompose-or-type latte-kernel.defenv/empty-env [] '(Π [C ✳] (Π [⇧ (Π [⇧ A] C)] (Π [⇧ (Π [⇧ B] C)] C))))
 
 (defimplicit or-elim
-  "An elimination rule that takes a proof
- `or-term` of type `(or A B)`,
+  "`(or-elim or-term left-proof right-proof)` is a
+n elimination rule that takes a proof  `or-term` of type `(or A B)`,
 a proof `left-proof` of type `(==> A prop)`, 
 a proof `right-proof` of type `(==> B prop)`, and thus
 concludes that `prop` holds by `[[or-elim-thm]]`.
