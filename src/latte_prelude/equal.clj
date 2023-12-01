@@ -8,7 +8,7 @@
 
    [latte.utils :refer [decomposer set-opacity!]]
    [latte.core :as latte :refer [definition defthm defimplicit defimplicit*
-                                          assume have qed proof]]
+                                          assume have qed proof try-proof]]
 
    [latte-prelude.utils :as pu]
    [latte-prelude.prop :as p :refer [<=> and or not]]
@@ -101,6 +101,21 @@ Proves `(equal y x)` from `eq-proof` by symmetry of equality, cf. [[eq-sym-thm]]
     [(list #'eq-sym-thm T x y) eq-term]))
 
 (alter-meta! #'eq-sym update-in [:arglists] (fn [_] (list '[[eq-proof (equal x y)]])))
+
+(defthm not-eq-sym
+  [?T :type, x T, y T]
+  (==> (not (equal x y))
+       (not (equal y x))))
+
+(proof 'not-eq-sym-thm
+  (assume [Heq (not (equal x y))]
+    (assume [Hcontra (equal y x)]
+      (have <a> (equal x y) :by (eq-sym Hcontra))
+      (have <b> p/absurd :by (Heq <a>))))
+
+  (qed <b>))
+
+
 
 (defthm eq-trans-thm
   "The transitivity property of equality."

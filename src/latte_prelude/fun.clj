@@ -11,7 +11,7 @@ as objects and functions  as arrows in the so-called *LaTTe category*."
   (:refer-clojure :exclude [and or not identity])
 
   (:require [latte.core :as latte :refer [definition defaxiom defthm defnotation
-                                          proof assume have pose qed
+                                          proof try-proof assume have pose qed
                                           forall lambda]]
             [latte-prelude.prop :as p :refer [and or not]]
             [latte-prelude.equal :as eq :refer [equal]]
@@ -221,6 +221,24 @@ as objects and functions  as arrows in the so-called *LaTTe category*."
   (forall [x y T]
     (==> (equal (f x) (f y))
          (equal x y))))
+
+(defthm injective-contra
+  "The contrapositive of [[injective]]."
+  [[?T ?U :type], f (==> T U)]
+  (==> (injective f)
+       (forall [x y T]
+          (==> (not (equal x y))
+               (not (equal (f x) (f y)))))))
+
+(proof 'injective-contra-thm
+  (assume [Hinj _]
+    (assume [x T y T
+             Hneq (not (equal x y))]
+      (assume [Hcontra (equal (f x) (f y))]
+        (have <a> (equal x y) :by (Hinj x y Hcontra))
+        (have <b> p/absurd :by (Hneq <a>)))))
+
+  (qed <b>))
 
 (definition surjective
   "A surjective function."
