@@ -129,9 +129,3 @@ This makes the type `T` associated to the law a *semigroup*."
         (identity-left ⋅ e)
         (identity-right ⋅ e)
         (has-inverse ⋅ e)))
-
-
-
-  
-
-
